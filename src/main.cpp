@@ -25,7 +25,7 @@ void setup() {
   
   tft.init();
   tft.setRotation(2);  
-  tft.fillScreen(TFT_BLACK);
+  tft.fillScreen(TFT_BLUE);
   
   // Set both displays as 'inactive'
   // digitalWrite(firstScreenCS, HIGH);
@@ -35,11 +35,11 @@ void setup() {
 }
 
 void loop(void) {
-  // Fill the whole sprite with black (Sprite is in memory so not visible yet)
-  spr.fillSprite(TFT_BLACK);
-
   // Number of pixels to draw
   uint16_t n = 100;
+
+  // Fill the whole sprite with black (Sprite is in memory so not visible yet)
+  spr.fillSprite(TFT_BLACK);
 
   // Draw 100 random colour pixels at random positions in sprite
   while (n--)
@@ -63,14 +63,11 @@ void loop(void) {
   spr.drawString("Sprite", WIDTH / 2, HEIGHT / 2, 4);
 
   // Now push the sprite to the TFT at position 0,0 on screen
-  spr.pushSprite(-40, -40);
-  spr.pushSprite(tft.width() / 2 - WIDTH / 2, tft.height() / 2 - HEIGHT / 2);
-  spr.pushSprite(tft.width() - WIDTH + 40, tft.height() - HEIGHT + 40);
+  // spr.pushSprite(-40, -40);
+  // spr.pushSprite(tft.width() / 2 - WIDTH / 2, tft.height() / 2 - HEIGHT / 2);
+  // spr.pushSprite(tft.width() - WIDTH + 40, tft.height() - HEIGHT + 40);
 
-  delay(DELAY);
-
-  // Fill TFT screen with blue
-  tft.fillScreen(TFT_BLUE);
+  // delay(DELAY);
 
   // Draw a blue rectangle in sprite so when we move it 1 pixel it does not leave a trail
   // on the blue screen background
