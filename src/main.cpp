@@ -13,9 +13,6 @@ TFT_eSPI tft = TFT_eSPI();       // Invoke custom library
 
 
 void setup() {
-  Serial.begin(115200);
-  Serial.println(setup);
-
   pinMode(firstScreenCS, OUTPUT);
   digitalWrite(firstScreenCS, HIGH);
   
@@ -64,7 +61,6 @@ void setup() {
 }
 
 void loop() {
-  Serial.println("loop");
   // put your main code here, to run repeatedly:
-  delay(1000);
+  delay(100);
 }
