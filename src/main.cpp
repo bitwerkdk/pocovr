@@ -26,13 +26,15 @@ void setup() {
 }
 
 void loop() {
-  memset(colorBuffer, 0x00, LCD_WIDTH * LCD_HEIGHT * LCD_DEPTH);
-  for (int row = y; row < y + 50; ++row)
+  Serial.println("Start of loop");
+  //memset(colorBuffer, 0x00, LCD_WIDTH * LCD_HEIGHT * LCD_DEPTH);
+  /*for (int row = y; row < y + 50; ++row)
 	{
 		for (int col = x; col < x + 50; ++col)
 		{
 			colorBuffer[LCD_WIDTH * row + col] = 0xF800;
 		}
-	}
+	}*/
   Odroid_DrawFrame(colorBuffer);
+  Serial.println("End of loop");
 }
