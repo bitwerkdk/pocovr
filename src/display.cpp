@@ -14,8 +14,8 @@ static const char* LOG_TAG = "OdroidDisplay";
 static const gpio_num_t LCD_PIN_MISO = GPIO_NUM_19;
 static const gpio_num_t LCD_PIN_MOSI = GPIO_NUM_23;
 static const gpio_num_t LCD_PIN_SCLK = GPIO_NUM_18;
-static const gpio_num_t LCD_PIN_CS = GPIO_NUM_5;
-static const gpio_num_t LCD_PIN_DC = GPIO_NUM_21;
+static const gpio_num_t LCD_PIN_CS = GPIO_NUM_21;
+static const gpio_num_t LCD_PIN_DC = GPIO_NUM_2;
 static const gpio_num_t LCD_PIN_BACKLIGHT = GPIO_NUM_14;
 
 
@@ -110,7 +110,7 @@ void SendCommandParameters(uint8_t* data, int length)
 }
 
 
-void Odroid_InitializeDisplay(void)
+void Odroid_InitializeDisplay()
 {
 	// Initialize the SPI bus
 	{

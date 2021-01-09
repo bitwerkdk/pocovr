@@ -12,5 +12,5 @@
 #define LCD_DEPTH (2)
 
 
-void Odroid_InitializeDisplay(void);
+void Odroid_InitializeDisplay();
 void Odroid_DrawFrame(uint16_t* buffer);
