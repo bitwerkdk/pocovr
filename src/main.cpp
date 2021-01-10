@@ -1,114 +1,333 @@
-// TFT_eSPI library config: /.pio/libdeps/esp-wrover-kit/TFT_eSPI/User_Setup.h
-#include <SPI.h>
-#include <TFT_eSPI.h> // Hardware-specific library
+// Demo based on:
+// UTFT_Demo_320x240 by Henning Karlsen
+// web: http://www.henningkarlsen.com/electronics
+//
+/*
 
-#define firstScreenCS 21
-#define secondScreenCS 22
+ This sketch uses the GLCD and font 2 only.
+ 
+ Make sure all the display driver and pin comnenctions are correct by
+ editting the User_Setup.h file in the TFT_eSPI library folder.
 
-// Set delay after plotting the sprite
-#define DELAY 1000
+ #########################################################################
+ ###### DON'T FORGET TO UPDATE THE User_Setup.h FILE IN THE LIBRARY ######
+ #########################################################################
+ */
+#include <Arduino.h>
+#include "SPI.h"
 
-// Width and height of sprite
-#define WIDTH  128
-#define HEIGHT 128
+#include "TFT_eSPI.h"
 
-TFT_eSPI tft = TFT_eSPI();
-TFT_eSprite spr = TFT_eSprite(&tft);
+#define TFT_GREY 0x7BEF
 
-void setup() {
-  pinMode(firstScreenCS, OUTPUT);
-  pinMode(secondScreenCS, OUTPUT);
+TFT_eSPI myGLCD = TFT_eSPI();       // Invoke custom library
 
-  // Initialize both displays
-  digitalWrite(firstScreenCS, LOW);
-  digitalWrite(secondScreenCS, LOW);
-  
-  tft.init();
-  tft.setRotation(2);  
-  tft.fillScreen(TFT_BLUE);
-  
-  // Set both displays as 'inactive'
-  // digitalWrite(firstScreenCS, HIGH);
-  // digitalWrite(secondScreenCS, HIGH);
-
-  spr.createSprite(WIDTH, HEIGHT);
+unsigned long runTime = 0;
+void setup()
+{
+  randomSeed(analogRead(A0));
+// Setup the LCD
+  myGLCD.init();
+  myGLCD.setRotation(1);
 }
 
-void loop(void) {
-  // Number of pixels to draw
-  uint16_t n = 100;
+void loop()
+{
+  randomSeed(millis());
+  //randomSeed(1234); // This ensure test is repeatable with exact same draws each loop
+  int buf[318];
+  int x, x2;
+  int y, y2;
+  int r;
+  runTime = millis();
+// Clear the screen and draw the frame
+  myGLCD.fillScreen(TFT_BLACK);
 
-  // Fill the whole sprite with black (Sprite is in memory so not visible yet)
-  spr.fillSprite(TFT_BLACK);
 
-  // Draw 100 random colour pixels at random positions in sprite
-  while (n--)
+  myGLCD.fillRect(0, 0, 319, 14,TFT_RED);
+
+  myGLCD.fillRect(0, 226, 319, 14,TFT_GREY);
+
+  myGLCD.setTextColor(TFT_BLACK,TFT_RED);
+  myGLCD.drawCentreString("* TFT_eSPI *", 160, 4, 1);
+  myGLCD.setTextColor(TFT_YELLOW,TFT_GREY);
+  myGLCD.drawCentreString("Adapted by Bodmer", 160, 228,1);
+
+  myGLCD.drawRect(0, 14, 319, 211, TFT_BLUE);
+
+// Draw crosshairs
+  myGLCD.drawLine(159, 15, 159, 224,TFT_BLUE);
+  myGLCD.drawLine(1, 119, 318, 119,TFT_BLUE);
+  for (int i=9; i<310; i+=10)
+    myGLCD.drawLine(i, 117, i, 121,TFT_BLUE);
+  for (int i=19; i<220; i+=10)
+    myGLCD.drawLine(157, i, 161, i,TFT_BLUE);
+
+// Draw sin-, cos- and tan-lines  
+  myGLCD.setTextColor(TFT_CYAN);
+  myGLCD.drawString("Sin", 5, 15,2);
+  for (int i=1; i<318; i++)
   {
-    uint16_t colour = random(0x10000); // Returns colour 0 - 0xFFFF
-    int16_t x = random(WIDTH);        // Random x coordinate
-    int16_t y = random(HEIGHT);       // Random y coordinate
-    spr.drawPixel( x, y, colour);      // Draw pixel in sprite
+    myGLCD.drawPixel(i,119+(sin(((i*1.13)*3.14)/180)*95),TFT_CYAN);
+  }
+  myGLCD.setTextColor(TFT_RED);
+  myGLCD.drawString("Cos", 5, 30,2);
+  for (int i=1; i<318; i++)
+  {
+    myGLCD.drawPixel(i,119+(cos(((i*1.13)*3.14)/180)*95),TFT_RED);
+  }
+  myGLCD.setTextColor(TFT_YELLOW);
+  myGLCD.drawString("Tan", 5, 45,2);
+  for (int i=1; i<318; i++)
+  {
+    myGLCD.drawPixel(i,119+(tan(((i*1.13)*3.14)/180)),TFT_YELLOW);
   }
 
-  // Draw some lines
-  spr.drawLine(1, 0, WIDTH, HEIGHT-1, TFT_GREEN);
-  spr.drawLine(0, 0, WIDTH, HEIGHT, TFT_GREEN);
-  spr.drawLine(0, 1, WIDTH-1, HEIGHT, TFT_GREEN);
-  spr.drawLine(0, HEIGHT-1, WIDTH-1, 0, TFT_RED);
-  spr.drawLine(0, HEIGHT, WIDTH, 0, TFT_RED);
-  spr.drawLine(1, HEIGHT, WIDTH, 1, TFT_RED);
+  delay(0);
 
-  // Draw some text with Middle Centre datum
-  spr.setTextDatum(MC_DATUM);
-  spr.drawString("Sprite", WIDTH / 2, HEIGHT / 2, 4);
+  myGLCD.fillRect(1,15,317,209,TFT_BLACK);
 
-  // Now push the sprite to the TFT at position 0,0 on screen
-  // spr.pushSprite(-40, -40);
-  // spr.pushSprite(tft.width() / 2 - WIDTH / 2, tft.height() / 2 - HEIGHT / 2);
-  // spr.pushSprite(tft.width() - WIDTH + 40, tft.height() - HEIGHT + 40);
-
-  // delay(DELAY);
-
-  // Draw a blue rectangle in sprite so when we move it 1 pixel it does not leave a trail
-  // on the blue screen background
-  spr.drawRect(0, 0, WIDTH, HEIGHT, TFT_BLUE);
-
-  int x = tft.width() / 2  -  WIDTH / 2;
-  int y = tft.height() / 2 - HEIGHT / 2;
-
-  uint32_t updateTime = 0;       // time for next update
-
-  while (true)
+  myGLCD.drawLine(159, 15, 159, 224,TFT_BLUE);
+  myGLCD.drawLine(1, 119, 318, 119,TFT_BLUE);
+int col = 0;
+// Draw a moving sinewave
+  x=1;
+  for (int i=1; i<(317*20); i++) 
   {
-    // Random movement direction
-    int dx = 1; if (random(2)) dx = -1;
-    int dy = 1; if (random(2)) dy = -1;
-
-    // Pull it back onto screen if it wanders off
-    if (x < -WIDTH/2) dx = 1;
-    if (x >= tft.width()-WIDTH/2) dx = -1;
-    if (y < -HEIGHT/2) dy = 1;
-    if (y >= tft.height()-HEIGHT/2) dy = -1;
-
-    // Draw it 50 time, moving in random direct or staying still
-    n = 50;
-    int wait = random (50);
-    while (n)
+    x++;
+    if (x==318)
+      x=1;
+    if (i>318)
     {
-      if (updateTime <= millis())
-      {
-        // Use time delay so sprtie does not move fast when not all on screen
-        updateTime = millis() + wait;
-
-        // Push the sprite to the TFT screen
-        spr.pushSprite(x, y);
-
-        // Change coord for next loop
-        x += dx;
-        y += dy;
-        n--;
-        yield(); // Stop watchdog reset
-      }
+      if ((x==159)||(buf[x-1]==119))
+        col = TFT_BLUE;
+      else
+      myGLCD.drawPixel(x,buf[x-1],TFT_BLACK);
     }
-  } // Infinite while, will not exit!
+    y=119+(sin(((i*1.1)*3.14)/180)*(90-(i / 100)));
+    myGLCD.drawPixel(x,y,TFT_BLUE);
+    buf[x-1]=y;
+  }
+
+  delay(0);
+
+  myGLCD.fillRect(1,15,317,209,TFT_BLACK);
+
+// Draw some filled rectangles
+  for (int i=1; i<6; i++)
+  {
+    switch (i)
+    {
+      case 1:
+        col = TFT_MAGENTA;
+        break;
+      case 2:
+        col = TFT_RED;
+        break;
+      case 3:
+        col = TFT_GREEN;
+        break;
+      case 4:
+        col = TFT_BLUE;
+        break;
+      case 5:
+        col = TFT_YELLOW;
+        break;
+    }
+    myGLCD.fillRect(70+(i*20), 30+(i*20), 60, 60,col);
+  }
+
+  delay(0);
+
+  myGLCD.fillRect(1,15,317,209,TFT_BLACK);
+
+// Draw some filled, rounded rectangles
+  for (int i=1; i<6; i++)
+  {
+    switch (i)
+    {
+      case 1:
+        col = TFT_MAGENTA;
+        break;
+      case 2:
+        col = TFT_RED;
+        break;
+      case 3:
+        col = TFT_GREEN;
+        break;
+      case 4:
+        col = TFT_BLUE;
+        break;
+      case 5:
+        col = TFT_YELLOW;
+        break;
+    }
+    myGLCD.fillRoundRect(190-(i*20), 30+(i*20), 60,60, 3,col);
+  }
+  
+  delay(0);
+
+  myGLCD.fillRect(1,15,317,209,TFT_BLACK);
+
+// Draw some filled circles
+  for (int i=1; i<6; i++)
+  {
+    switch (i)
+    {
+      case 1:
+        col = TFT_MAGENTA;
+        break;
+      case 2:
+        col = TFT_RED;
+        break;
+      case 3:
+        col = TFT_GREEN;
+        break;
+      case 4:
+        col = TFT_BLUE;
+        break;
+      case 5:
+        col = TFT_YELLOW;
+        break;
+    }
+    myGLCD.fillCircle(100+(i*20),60+(i*20), 30,col);
+  }
+  
+  delay(0);
+
+  myGLCD.fillRect(1,15,317,209,TFT_BLACK);
+
+// Draw some lines in a pattern
+
+  for (int i=15; i<224; i+=5)
+  {
+    myGLCD.drawLine(1, i, (i*1.44)-10, 223,TFT_RED);
+  }
+
+  for (int i=223; i>15; i-=5)
+  {
+    myGLCD.drawLine(317, i, (i*1.44)-11, 15,TFT_RED);
+  }
+
+  for (int i=223; i>15; i-=5)
+  {
+    myGLCD.drawLine(1, i, 331-(i*1.44), 15,TFT_CYAN);
+  }
+
+  for (int i=15; i<224; i+=5)
+  {
+    myGLCD.drawLine(317, i, 330-(i*1.44), 223,TFT_CYAN);
+  }
+  
+  delay(0);
+
+
+  myGLCD.fillRect(1,15,317,209,TFT_BLACK);
+
+// Draw some random circles
+  for (int i=0; i<100; i++)
+  {
+    x=32+random(256);
+    y=45+random(146);
+    r=random(30);
+    myGLCD.drawCircle(x, y, r,random(0xFFFF));
+  }
+
+  delay(0);
+
+  myGLCD.fillRect(1,15,317,209,TFT_BLACK);
+
+// Draw some random rectangles
+  for (int i=0; i<100; i++)
+  {
+    x=2+random(316);
+    y=16+random(207);
+    x2=2+random(316);
+    y2=16+random(207);
+    if (x2<x) {
+      r=x;x=x2;x2=r;
+    }
+    if (y2<y) {
+      r=y;y=y2;y2=r;
+    }
+    myGLCD.drawRect(x, y, x2-x, y2-y,random(0xFFFF));
+  }
+
+  delay(0);
+
+
+  myGLCD.fillRect(1,15,317,209,TFT_BLACK);
+
+// Draw some random rounded rectangles
+  for (int i=0; i<100; i++)
+  {
+    x=2+random(316);
+    y=16+random(207);
+    x2=2+random(316);
+    y2=16+random(207);
+    // We need to get the width and height and do some window checking
+    if (x2<x) {
+      r=x;x=x2;x2=r;
+    }
+    if (y2<y) {
+      r=y;y=y2;y2=r;
+    }
+    // We need a minimum size of 6
+    if((x2-x)<6) x2=x+6;
+    if((y2-y)<6) y2=y+6;
+    myGLCD.drawRoundRect(x, y, x2-x,y2-y, 3,random(0xFFFF));
+  }
+
+  delay(0);
+
+  myGLCD.fillRect(1,15,317,209,TFT_BLACK);
+
+ //randomSeed(1234);
+ int colour = 0;
+ for (int i=0; i<100; i++)
+  {
+    x=2+random(316);
+    y=16+random(209);
+    x2=2+random(316);
+    y2=16+random(209);
+    colour=random(0xFFFF);
+    myGLCD.drawLine(x, y, x2, y2,colour);
+  }
+
+  delay(0);
+
+  myGLCD.fillRect(1,15,317,209,TFT_BLACK);
+
+  // This test has been modified as it takes more time to calculate the random numbers
+  // than to draw the pixels (3 seconds to produce 30,000 randoms)!
+  for (int i=0; i<10000; i++)
+  {
+    myGLCD.drawPixel(2+random(316), 16+random(209),random(0xFFFF));
+  }
+
+  // Draw 10,000 pixels to fill a 100x100 pixel box
+  // use the coords as the colour to produce the banding
+  //byte i = 100;
+  //while (i--) {
+  //  byte j = 100;
+  //  while (j--) myGLCD.drawPixel(i+110,j+70,i+j);
+  //  //while (j--) myGLCD.drawPixel(i+110,j+70,0xFFFF);
+  //}
+  delay(0);
+
+  myGLCD.fillScreen(TFT_BLUE);
+  myGLCD.fillRoundRect(80, 70, 239-80,169-70, 3,TFT_RED);
+  
+  myGLCD.setTextColor(TFT_WHITE,TFT_RED);
+  myGLCD.drawCentreString("That's it!", 160, 93,2);
+  myGLCD.drawCentreString("Restarting in a", 160, 119,2);
+  myGLCD.drawCentreString("few seconds...", 160, 132,2);
+
+  runTime = millis()-runTime;
+  myGLCD.setTextColor(TFT_GREEN,TFT_BLUE);
+  myGLCD.drawCentreString("Runtime: (msecs)", 160, 210,2);
+  myGLCD.setTextDatum(TC_DATUM);
+  myGLCD.drawNumber(runTime, 160, 225,2);
+  delay (5000);
 }
+
