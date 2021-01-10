@@ -1,263 +1,114 @@
-#include <Arduino.h>
+// TFT_eSPI library config: /.pio/libdeps/esp-wrover-kit/TFT_eSPI/User_Setup.h
+#include <SPI.h>
+#include <TFT_eSPI.h> // Hardware-specific library
 
-//This application does not rely on any libraries and it is for ILI9341
+#define firstScreenCS 21
+#define secondScreenCS 22
 
-//This program is a demo of clearing screen to display black,white,red,green,blue.
+// Set delay after plotting the sprite
+#define DELAY 1000
 
-//when using the BREAKOUT BOARD only and using these hardware spi lines to the LCD,
-//the SDA pin and SCK pin is defined by the system and can't be modified.
-//if you don't need to control the LED pin,you can set it to 3.3V and set the pin definition to -1.
-//other pins can be defined by youself,for example
-//pin usage as follow:
-//             CS  DC/RS  RESET  SDI/MOSI  SCK   LED    VCC     GND    
-//Arduino Uno  A5   A3     A4       11      13   A0   5V/3.3V   GND
+// Width and height of sprite
+#define WIDTH  128
+#define HEIGHT 128
 
-//Remember to set the pins to suit your display module!
-/********************************************************************************
-* @attention
-*
-* THE PRESENT FIRMWARE WHICH IS FOR GUIDANCE ONLY AIMS AT PROVIDING CUSTOMERS
-* WITH CODING INFORMATION REGARDING THEIR PRODUCTS IN ORDER FOR THEM TO SAVE
-* TIME. AS A RESULT, QD electronic SHALL NOT BE HELD LIABLE FOR ANY
-* DIRECT, INDIRECT OR CONSEQUENTIAL DAMAGES WITH RESPECT TO ANY CLAIMS ARISING
-* FROM THE CONTENT OF SUCH FIRMWARE AND/OR THE USE MADE BY CUSTOMERS OF THE 
-* CODING INFORMATION CONTAINED HEREIN IN CONNECTION WITH THEIR PRODUCTS.
-**********************************************************************************/
-#define LED   -1    
-#define CS    21        
-#define RS    2       
-#define RESET 4
-#define MOSI  23
-#define SCK   18
+TFT_eSPI tft = TFT_eSPI();
+TFT_eSprite spr = TFT_eSprite(&tft);
 
-void Lcd_Writ_Bus(unsigned char d)
-{
-   uint8_t val = 0x80;
-    while(val)
+void setup() {
+  pinMode(firstScreenCS, OUTPUT);
+  pinMode(secondScreenCS, OUTPUT);
+
+  // Initialize both displays
+  digitalWrite(firstScreenCS, LOW);
+  digitalWrite(secondScreenCS, LOW);
+  
+  tft.init();
+  tft.setRotation(2);  
+  tft.fillScreen(TFT_BLUE);
+  
+  // Set both displays as 'inactive'
+  // digitalWrite(firstScreenCS, HIGH);
+  // digitalWrite(secondScreenCS, HIGH);
+
+  spr.createSprite(WIDTH, HEIGHT);
+}
+
+void loop(void) {
+  // Number of pixels to draw
+  uint16_t n = 100;
+
+  // Fill the whole sprite with black (Sprite is in memory so not visible yet)
+  spr.fillSprite(TFT_BLACK);
+
+  // Draw 100 random colour pixels at random positions in sprite
+  while (n--)
+  {
+    uint16_t colour = random(0x10000); // Returns colour 0 - 0xFFFF
+    int16_t x = random(WIDTH);        // Random x coordinate
+    int16_t y = random(HEIGHT);       // Random y coordinate
+    spr.drawPixel( x, y, colour);      // Draw pixel in sprite
+  }
+
+  // Draw some lines
+  spr.drawLine(1, 0, WIDTH, HEIGHT-1, TFT_GREEN);
+  spr.drawLine(0, 0, WIDTH, HEIGHT, TFT_GREEN);
+  spr.drawLine(0, 1, WIDTH-1, HEIGHT, TFT_GREEN);
+  spr.drawLine(0, HEIGHT-1, WIDTH-1, 0, TFT_RED);
+  spr.drawLine(0, HEIGHT, WIDTH, 0, TFT_RED);
+  spr.drawLine(1, HEIGHT, WIDTH, 1, TFT_RED);
+
+  // Draw some text with Middle Centre datum
+  spr.setTextDatum(MC_DATUM);
+  spr.drawString("Sprite", WIDTH / 2, HEIGHT / 2, 4);
+
+  // Now push the sprite to the TFT at position 0,0 on screen
+  // spr.pushSprite(-40, -40);
+  // spr.pushSprite(tft.width() / 2 - WIDTH / 2, tft.height() / 2 - HEIGHT / 2);
+  // spr.pushSprite(tft.width() - WIDTH + 40, tft.height() - HEIGHT + 40);
+
+  // delay(DELAY);
+
+  // Draw a blue rectangle in sprite so when we move it 1 pixel it does not leave a trail
+  // on the blue screen background
+  spr.drawRect(0, 0, WIDTH, HEIGHT, TFT_BLUE);
+
+  int x = tft.width() / 2  -  WIDTH / 2;
+  int y = tft.height() / 2 - HEIGHT / 2;
+
+  uint32_t updateTime = 0;       // time for next update
+
+  while (true)
+  {
+    // Random movement direction
+    int dx = 1; if (random(2)) dx = -1;
+    int dy = 1; if (random(2)) dy = -1;
+
+    // Pull it back onto screen if it wanders off
+    if (x < -WIDTH/2) dx = 1;
+    if (x >= tft.width()-WIDTH/2) dx = -1;
+    if (y < -HEIGHT/2) dy = 1;
+    if (y >= tft.height()-HEIGHT/2) dy = -1;
+
+    // Draw it 50 time, moving in random direct or staying still
+    n = 50;
+    int wait = random (50);
+    while (n)
     {
-      if(d&val)
+      if (updateTime <= millis())
       {
-        digitalWrite(MOSI,HIGH);
+        // Use time delay so sprtie does not move fast when not all on screen
+        updateTime = millis() + wait;
+
+        // Push the sprite to the TFT screen
+        spr.pushSprite(x, y);
+
+        // Change coord for next loop
+        x += dx;
+        y += dy;
+        n--;
+        yield(); // Stop watchdog reset
       }
-      else
-      {
-        digitalWrite(MOSI,LOW);
-      }
-      digitalWrite(SCK,LOW);
-      digitalWrite(SCK,HIGH);
-      val >>= 1;
     }
-}
-
-void Lcd_Write_Com(unsigned char VH)  
-{   
-  *(portOutputRegister(digitalPinToPort(RS))) &=  ~digitalPinToBitMask(RS);//LCD_RS=0;
-  Lcd_Writ_Bus(VH);
-}
-
-void Lcd_Write_Data(unsigned char VH)
-{
-  *(portOutputRegister(digitalPinToPort(RS)))|=  digitalPinToBitMask(RS);//LCD_RS=1;
-  Lcd_Writ_Bus(VH);
-}
-
-void Lcd_Write_Com_Data(unsigned char com,unsigned char dat)
-{
-  Lcd_Write_Com(com);
-  Lcd_Write_Data(dat);
-}
-
-void Address_set(unsigned int x1,unsigned int y1,unsigned int x2,unsigned int y2)
-{
-        Lcd_Write_Com(0x2a);
-	Lcd_Write_Data(x1>>8);
-	Lcd_Write_Data(x1);
-	Lcd_Write_Data(x2>>8);
-	Lcd_Write_Data(x2);
-        Lcd_Write_Com(0x2b);
-	Lcd_Write_Data(y1>>8);
-	Lcd_Write_Data(y1);
-	Lcd_Write_Data(y2>>8);
-	Lcd_Write_Data(y2);
-	Lcd_Write_Com(0x2c); 							 
-}
-
-void Lcd_Init(void)
-{
-  digitalWrite(RESET,HIGH);
-  delay(5); 
-  digitalWrite(RESET,LOW);
-  delay(15);
-  digitalWrite(RESET,HIGH);
-  delay(15);
-
-  digitalWrite(CS,LOW);  //CS
-
-    Lcd_Write_Com(0xCB);  
-    Lcd_Write_Data(0x39); 
-    Lcd_Write_Data(0x2C); 
-    Lcd_Write_Data(0x00); 
-    Lcd_Write_Data(0x34); 
-    Lcd_Write_Data(0x02); 
-
-    Lcd_Write_Com(0xCF);  
-    Lcd_Write_Data(0x00); 
-    Lcd_Write_Data(0XC1); 
-    Lcd_Write_Data(0X30); 
-
-    Lcd_Write_Com(0xE8);  
-    Lcd_Write_Data(0x85); 
-    Lcd_Write_Data(0x00); 
-    Lcd_Write_Data(0x78); 
-
-    Lcd_Write_Com(0xEA);  
-    Lcd_Write_Data(0x00); 
-    Lcd_Write_Data(0x00); 
- 
-    Lcd_Write_Com(0xED);  
-    Lcd_Write_Data(0x64); 
-    Lcd_Write_Data(0x03); 
-    Lcd_Write_Data(0X12); 
-    Lcd_Write_Data(0X81); 
-
-    Lcd_Write_Com(0xF7);  
-    Lcd_Write_Data(0x20); 
-  
-    Lcd_Write_Com(0xC0);    //Power control 
-    Lcd_Write_Data(0x23);   //VRH[5:0] 
- 
-    Lcd_Write_Com(0xC1);    //Power control 
-    Lcd_Write_Data(0x10);   //SAP[2:0];BT[3:0] 
-
-    Lcd_Write_Com(0xC5);    //VCM control 
-    Lcd_Write_Data(0x3e);   //Contrast
-    Lcd_Write_Data(0x28); 
- 
-    Lcd_Write_Com(0xC7);    //VCM control2 
-    Lcd_Write_Data(0x86);   //--
- 
-    Lcd_Write_Com(0x36);    // Memory Access Control 
-    Lcd_Write_Data(0x48);   
-
-    Lcd_Write_Com(0x3A);    
-    Lcd_Write_Data(0x55); 
-
-    Lcd_Write_Com(0xB1);    
-    Lcd_Write_Data(0x00);  
-    Lcd_Write_Data(0x18); 
- 
-    Lcd_Write_Com(0xB6);    // Display Function Control 
-    Lcd_Write_Data(0x08); 
-    Lcd_Write_Data(0x82);
-    Lcd_Write_Data(0x27);  
-
-    Lcd_Write_Com(0x11);    //Exit Sleep 
-    delay(120); 
-				
-    Lcd_Write_Com(0x29);    //Display on 
-    Lcd_Write_Com(0x2c); 
-    digitalWrite(CS,HIGH);
-}
-
-void H_line(unsigned int x, unsigned int y, unsigned int l, unsigned int c)                   
-{	
-  unsigned int i,j;
-  digitalWrite(CS,LOW);
-  Lcd_Write_Com(0x02c); //write_memory_start
-  //digitalWrite(RS,HIGH);
-  l=l+x;
-  Address_set(x,y,l,y);
-  j=l*2;
-  for(i=1;i<=j;i++)
-  {
-    Lcd_Write_Data(c);
-  }
-  digitalWrite(CS,HIGH);   
-}
-
-void V_line(unsigned int x, unsigned int y, unsigned int l, unsigned int c)                   
-{	
-  unsigned int i,j;
-  digitalWrite(CS,LOW);
-  Lcd_Write_Com(0x02c); //write_memory_start
-  //digitalWrite(RS,HIGH);
-  l=l+y;
-  Address_set(x,y,x,l);
-  j=l*2;
-  for(i=1;i<=j;i++)
-  { 
-    Lcd_Write_Data(c);
-  }
-  digitalWrite(CS,HIGH);   
-}
-
-void Rect(unsigned int x,unsigned int y,unsigned int w,unsigned int h,unsigned int c)
-{
-  H_line(x  , y  , w, c);
-  H_line(x  , y+h, w, c);
-  V_line(x  , y  , h, c);
-  V_line(x+w, y  , h, c);
-}
-
-void Rectf(unsigned int x,unsigned int y,unsigned int w,unsigned int h,unsigned int c)
-{
-  unsigned int i;
-  for(i=0;i<h;i++)
-  {
-    H_line(x  , y  , w, c);
-    H_line(x  , y+i, w, c);
-  }
-}
-
-int RGB(int r,int g,int b)
-{
-  return r << 16 | g << 8 | b;
-}
-
-void LCD_Clear(unsigned int j)                   
-{	
-  unsigned int i,m;
-  digitalWrite(CS,LOW);
-  Address_set(0,0,240,320);
-  for(i=0;i<240;i++)
-    for(m=0;m<320;m++)
-    {
-      Lcd_Write_Data(j>>8);
-      Lcd_Write_Data(j);
-    }
-  digitalWrite(CS,HIGH);   
-}
-
-void setup()
-{
-  pinMode(A0,OUTPUT);
-  pinMode(A3,OUTPUT);
-  pinMode(A4,OUTPUT);
-  pinMode(A5,OUTPUT);
-  pinMode(11,OUTPUT);
-  pinMode(13,OUTPUT);
-
-  digitalWrite(A0, HIGH);
-  digitalWrite(A3, HIGH);
-  digitalWrite(A4, HIGH);
-  digitalWrite(A5, HIGH);
-  digitalWrite(11, HIGH);
-  digitalWrite(13, HIGH);
-  
-  Lcd_Init();
-  
-}
-
-void loop()
-{  
-   LCD_Clear(0xf800);
-   LCD_Clear(0x07E0);
-   LCD_Clear(0x001F);
-   LCD_Clear(0x0); 
-  for(int i=0;i<500;i++)
-  {
-    Rect(random(300),random(300),random(300),random(300),random(65535)); // rectangle at x, y, with, hight, color
-  }
-  
-//  LCD_Clear(0xf800);
+  } // Infinite while, will not exit!
 }
