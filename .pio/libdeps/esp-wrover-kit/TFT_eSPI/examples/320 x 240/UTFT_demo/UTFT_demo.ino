@@ -20,15 +20,15 @@
 
 #define TFT_GREY 0x7BEF
 
-TFT_eSPI myGLCD = TFT_eSPI();       // Invoke custom library
+TFT_eSPI tft = TFT_eSPI();       // Invoke custom library
 
 unsigned long runTime = 0;
 void setup()
 {
   randomSeed(analogRead(A0));
 // Setup the LCD
-  myGLCD.init();
-  myGLCD.setRotation(1);
+  tft.init();
+  tft.setRotation(1);
 }
 
 void loop()
@@ -41,54 +41,54 @@ void loop()
   int r;
   runTime = millis();
 // Clear the screen and draw the frame
-  myGLCD.fillScreen(TFT_BLACK);
+  tft.fillScreen(TFT_BLACK);
 
 
-  myGLCD.fillRect(0, 0, 319, 14,TFT_RED);
+  tft.fillRect(0, 0, 319, 14,TFT_RED);
 
-  myGLCD.fillRect(0, 226, 319, 14,TFT_GREY);
+  tft.fillRect(0, 226, 319, 14,TFT_GREY);
 
-  myGLCD.setTextColor(TFT_BLACK,TFT_RED);
-  myGLCD.drawCentreString("* TFT_eSPI *", 160, 4, 1);
-  myGLCD.setTextColor(TFT_YELLOW,TFT_GREY);
-  myGLCD.drawCentreString("Adapted by Bodmer", 160, 228,1);
+  tft.setTextColor(TFT_BLACK,TFT_RED);
+  tft.drawCentreString("* TFT_eSPI *", 160, 4, 1);
+  tft.setTextColor(TFT_YELLOW,TFT_GREY);
+  tft.drawCentreString("Adapted by Bodmer", 160, 228,1);
 
-  myGLCD.drawRect(0, 14, 319, 211, TFT_BLUE);
+  tft.drawRect(0, 14, 319, 211, TFT_BLUE);
 
 // Draw crosshairs
-  myGLCD.drawLine(159, 15, 159, 224,TFT_BLUE);
-  myGLCD.drawLine(1, 119, 318, 119,TFT_BLUE);
+  tft.drawLine(159, 15, 159, 224,TFT_BLUE);
+  tft.drawLine(1, 119, 318, 119,TFT_BLUE);
   for (int i=9; i<310; i+=10)
-    myGLCD.drawLine(i, 117, i, 121,TFT_BLUE);
+    tft.drawLine(i, 117, i, 121,TFT_BLUE);
   for (int i=19; i<220; i+=10)
-    myGLCD.drawLine(157, i, 161, i,TFT_BLUE);
+    tft.drawLine(157, i, 161, i,TFT_BLUE);
 
 // Draw sin-, cos- and tan-lines  
-  myGLCD.setTextColor(TFT_CYAN);
-  myGLCD.drawString("Sin", 5, 15,2);
+  tft.setTextColor(TFT_CYAN);
+  tft.drawString("Sin", 5, 15,2);
   for (int i=1; i<318; i++)
   {
-    myGLCD.drawPixel(i,119+(sin(((i*1.13)*3.14)/180)*95),TFT_CYAN);
+    tft.drawPixel(i,119+(sin(((i*1.13)*3.14)/180)*95),TFT_CYAN);
   }
-  myGLCD.setTextColor(TFT_RED);
-  myGLCD.drawString("Cos", 5, 30,2);
+  tft.setTextColor(TFT_RED);
+  tft.drawString("Cos", 5, 30,2);
   for (int i=1; i<318; i++)
   {
-    myGLCD.drawPixel(i,119+(cos(((i*1.13)*3.14)/180)*95),TFT_RED);
+    tft.drawPixel(i,119+(cos(((i*1.13)*3.14)/180)*95),TFT_RED);
   }
-  myGLCD.setTextColor(TFT_YELLOW);
-  myGLCD.drawString("Tan", 5, 45,2);
+  tft.setTextColor(TFT_YELLOW);
+  tft.drawString("Tan", 5, 45,2);
   for (int i=1; i<318; i++)
   {
-    myGLCD.drawPixel(i,119+(tan(((i*1.13)*3.14)/180)),TFT_YELLOW);
+    tft.drawPixel(i,119+(tan(((i*1.13)*3.14)/180)),TFT_YELLOW);
   }
 
   delay(0);
 
-  myGLCD.fillRect(1,15,317,209,TFT_BLACK);
+  tft.fillRect(1,15,317,209,TFT_BLACK);
 
-  myGLCD.drawLine(159, 15, 159, 224,TFT_BLUE);
-  myGLCD.drawLine(1, 119, 318, 119,TFT_BLUE);
+  tft.drawLine(159, 15, 159, 224,TFT_BLUE);
+  tft.drawLine(1, 119, 318, 119,TFT_BLUE);
 int col = 0;
 // Draw a moving sinewave
   x=1;
@@ -102,16 +102,16 @@ int col = 0;
       if ((x==159)||(buf[x-1]==119))
         col = TFT_BLUE;
       else
-      myGLCD.drawPixel(x,buf[x-1],TFT_BLACK);
+      tft.drawPixel(x,buf[x-1],TFT_BLACK);
     }
     y=119+(sin(((i*1.1)*3.14)/180)*(90-(i / 100)));
-    myGLCD.drawPixel(x,y,TFT_BLUE);
+    tft.drawPixel(x,y,TFT_BLUE);
     buf[x-1]=y;
   }
 
   delay(0);
 
-  myGLCD.fillRect(1,15,317,209,TFT_BLACK);
+  tft.fillRect(1,15,317,209,TFT_BLACK);
 
 // Draw some filled rectangles
   for (int i=1; i<6; i++)
@@ -134,12 +134,12 @@ int col = 0;
         col = TFT_YELLOW;
         break;
     }
-    myGLCD.fillRect(70+(i*20), 30+(i*20), 60, 60,col);
+    tft.fillRect(70+(i*20), 30+(i*20), 60, 60,col);
   }
 
   delay(0);
 
-  myGLCD.fillRect(1,15,317,209,TFT_BLACK);
+  tft.fillRect(1,15,317,209,TFT_BLACK);
 
 // Draw some filled, rounded rectangles
   for (int i=1; i<6; i++)
@@ -162,12 +162,12 @@ int col = 0;
         col = TFT_YELLOW;
         break;
     }
-    myGLCD.fillRoundRect(190-(i*20), 30+(i*20), 60,60, 3,col);
+    tft.fillRoundRect(190-(i*20), 30+(i*20), 60,60, 3,col);
   }
   
   delay(0);
 
-  myGLCD.fillRect(1,15,317,209,TFT_BLACK);
+  tft.fillRect(1,15,317,209,TFT_BLACK);
 
 // Draw some filled circles
   for (int i=1; i<6; i++)
@@ -190,39 +190,39 @@ int col = 0;
         col = TFT_YELLOW;
         break;
     }
-    myGLCD.fillCircle(100+(i*20),60+(i*20), 30,col);
+    tft.fillCircle(100+(i*20),60+(i*20), 30,col);
   }
   
   delay(0);
 
-  myGLCD.fillRect(1,15,317,209,TFT_BLACK);
+  tft.fillRect(1,15,317,209,TFT_BLACK);
 
 // Draw some lines in a pattern
 
   for (int i=15; i<224; i+=5)
   {
-    myGLCD.drawLine(1, i, (i*1.44)-10, 223,TFT_RED);
+    tft.drawLine(1, i, (i*1.44)-10, 223,TFT_RED);
   }
 
   for (int i=223; i>15; i-=5)
   {
-    myGLCD.drawLine(317, i, (i*1.44)-11, 15,TFT_RED);
+    tft.drawLine(317, i, (i*1.44)-11, 15,TFT_RED);
   }
 
   for (int i=223; i>15; i-=5)
   {
-    myGLCD.drawLine(1, i, 331-(i*1.44), 15,TFT_CYAN);
+    tft.drawLine(1, i, 331-(i*1.44), 15,TFT_CYAN);
   }
 
   for (int i=15; i<224; i+=5)
   {
-    myGLCD.drawLine(317, i, 330-(i*1.44), 223,TFT_CYAN);
+    tft.drawLine(317, i, 330-(i*1.44), 223,TFT_CYAN);
   }
   
   delay(0);
 
 
-  myGLCD.fillRect(1,15,317,209,TFT_BLACK);
+  tft.fillRect(1,15,317,209,TFT_BLACK);
 
 // Draw some random circles
   for (int i=0; i<100; i++)
@@ -230,12 +230,12 @@ int col = 0;
     x=32+random(256);
     y=45+random(146);
     r=random(30);
-    myGLCD.drawCircle(x, y, r,random(0xFFFF));
+    tft.drawCircle(x, y, r,random(0xFFFF));
   }
 
   delay(0);
 
-  myGLCD.fillRect(1,15,317,209,TFT_BLACK);
+  tft.fillRect(1,15,317,209,TFT_BLACK);
 
 // Draw some random rectangles
   for (int i=0; i<100; i++)
@@ -250,13 +250,13 @@ int col = 0;
     if (y2<y) {
       r=y;y=y2;y2=r;
     }
-    myGLCD.drawRect(x, y, x2-x, y2-y,random(0xFFFF));
+    tft.drawRect(x, y, x2-x, y2-y,random(0xFFFF));
   }
 
   delay(0);
 
 
-  myGLCD.fillRect(1,15,317,209,TFT_BLACK);
+  tft.fillRect(1,15,317,209,TFT_BLACK);
 
 // Draw some random rounded rectangles
   for (int i=0; i<100; i++)
@@ -275,12 +275,12 @@ int col = 0;
     // We need a minimum size of 6
     if((x2-x)<6) x2=x+6;
     if((y2-y)<6) y2=y+6;
-    myGLCD.drawRoundRect(x, y, x2-x,y2-y, 3,random(0xFFFF));
+    tft.drawRoundRect(x, y, x2-x,y2-y, 3,random(0xFFFF));
   }
 
   delay(0);
 
-  myGLCD.fillRect(1,15,317,209,TFT_BLACK);
+  tft.fillRect(1,15,317,209,TFT_BLACK);
 
  //randomSeed(1234);
  int colour = 0;
@@ -291,18 +291,18 @@ int col = 0;
     x2=2+random(316);
     y2=16+random(209);
     colour=random(0xFFFF);
-    myGLCD.drawLine(x, y, x2, y2,colour);
+    tft.drawLine(x, y, x2, y2,colour);
   }
 
   delay(0);
 
-  myGLCD.fillRect(1,15,317,209,TFT_BLACK);
+  tft.fillRect(1,15,317,209,TFT_BLACK);
 
   // This test has been modified as it takes more time to calculate the random numbers
   // than to draw the pixels (3 seconds to produce 30,000 randoms)!
   for (int i=0; i<10000; i++)
   {
-    myGLCD.drawPixel(2+random(316), 16+random(209),random(0xFFFF));
+    tft.drawPixel(2+random(316), 16+random(209),random(0xFFFF));
   }
 
   // Draw 10,000 pixels to fill a 100x100 pixel box
@@ -315,19 +315,19 @@ int col = 0;
   //}
   delay(0);
 
-  myGLCD.fillScreen(TFT_BLUE);
-  myGLCD.fillRoundRect(80, 70, 239-80,169-70, 3,TFT_RED);
+  tft.fillScreen(TFT_BLUE);
+  tft.fillRoundRect(80, 70, 239-80,169-70, 3,TFT_RED);
   
-  myGLCD.setTextColor(TFT_WHITE,TFT_RED);
-  myGLCD.drawCentreString("That's it!", 160, 93,2);
-  myGLCD.drawCentreString("Restarting in a", 160, 119,2);
-  myGLCD.drawCentreString("few seconds...", 160, 132,2);
+  tft.setTextColor(TFT_WHITE,TFT_RED);
+  tft.drawCentreString("That's it!", 160, 93,2);
+  tft.drawCentreString("Restarting in a", 160, 119,2);
+  tft.drawCentreString("few seconds...", 160, 132,2);
 
   runTime = millis()-runTime;
-  myGLCD.setTextColor(TFT_GREEN,TFT_BLUE);
-  myGLCD.drawCentreString("Runtime: (msecs)", 160, 210,2);
-  myGLCD.setTextDatum(TC_DATUM);
-  myGLCD.drawNumber(runTime, 160, 225,2);
+  tft.setTextColor(TFT_GREEN,TFT_BLUE);
+  tft.drawCentreString("Runtime: (msecs)", 160, 210,2);
+  tft.setTextDatum(TC_DATUM);
+  tft.drawNumber(runTime, 160, 225,2);
   delay (5000);
 }
 
