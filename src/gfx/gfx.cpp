@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <TFT_eSPI.h>
+#include "../state/state.h"
 
 namespace gfx {
     TFT_eSPI tft = TFT_eSPI();
@@ -19,9 +20,13 @@ namespace gfx {
 
         // Write FPS
         tft.setTextColor(TFT_BLUE+TFT_GREEN,0xF800);
-        tft.drawCentreString("FPS: ", 160, 210, 2);
+        tft.drawCentreString("FPS: ", 100, 210, 2);
         tft.setTextDatum(TC_DATUM);
-        tft.drawNumber(counter * 1000 / (millis() - startTime), 160, 225, 2);
+        tft.drawNumber(counter * 1000 / (millis() - startTime), 100, 225, 2);
+
+        // Write counter
+        tft.drawCentreString("counter:", 210, 210, 2);
+        tft.drawNumber(state::getCount(), 210, 225, 2);
     }
 
     void setup() {
