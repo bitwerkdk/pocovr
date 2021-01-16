@@ -3,7 +3,7 @@
 #include "./state/state.h"
 
 void setup() {
-  state::setup();
+  //state::setup();
   gfx::setup();
 }
 

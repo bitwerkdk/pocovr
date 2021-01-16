@@ -1,3 +1,5 @@
+#include "state.h"
+
 #include <Arduino.h>
 
 namespace state {
