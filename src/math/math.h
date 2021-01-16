@@ -81,7 +81,7 @@ namespace math {
     };
 
     struct vector4F {
-        fixed x = 0, y = 0, z = 0, w = 1;
+        fixed x = 0, y = 0, z = 0, w = FX_FROM_I(1);
 
         inline vector4F() { }
         inline vector4F(const fixed& x, const fixed& y, const fixed& z, const fixed& w) : x(x), y(y), z(z), w(w) { }
@@ -102,20 +102,24 @@ namespace math {
         fixed m[4][4] = { { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } };
 
         mat4x4() { }
-        mat4x4(const fixed& p00, const fixed& p10, const fixed& p20, const fixed& p30,
+        /*mat4x4(const fixed& p00, const fixed& p10, const fixed& p20, const fixed& p30,
                const fixed& p01, const fixed& p11, const fixed& p21, const fixed& p31,
                const fixed& p02, const fixed& p12, const fixed& p22, const fixed& p32,
                const fixed& p03, const fixed& p13, const fixed& p23, const fixed& p33)
-               : m({ { p00, p10, p20, p30 }, { p01, p11, p21, p31 }, { p02, p12, p22, p32 }, { p03, p13, p23, p33 } }) { }
+               : m({ { p00, p10, p20, p30 }, { p01, p11, p21, p31 }, { p02, p12, p22, p32 }, { p03, p13, p23, p33 } }) { }*/
+        mat4x4(const fixed& p00, const fixed& p10, const fixed& p20, const fixed& p30,
+               const fixed& p01, const fixed& p11, const fixed& p21, const fixed& p31,
+               const fixed& p02, const fixed& p12, const fixed& p22, const fixed& p32,
+               const fixed& p03, const fixed& p13, const fixed& p23, const fixed& p33);
 
         vector4F operator *(const vector4F& second) const;
 
-        static mat4x4 XRotation(const fixed& angle);
-        static mat4x4 YRotation(const fixed& angle);
-        static mat4x4 ZRotation(const fixed& angle);
-        static mat4x4 Projection(const fixed& fov, const fixed& nearPlane, const fixed& farPlane, const fixed& width, const fixed& height);
-        static mat4x4 Transformation(const vector3F& pos, const vector3F& forward, const vector3F& up);
-        static mat4x4 InverseTransformation(const vector3F& pos, const vector3F& forward, const vector3F& up);
+        static mat4x4 xRotation(const fixed& angle);
+        static mat4x4 yRotation(const fixed& angle);
+        static mat4x4 zRotation(const fixed& angle);
+        static mat4x4 projection(const fixed& fov, const fixed& nearPlane, const fixed& farPlane, const fixed& width, const fixed& height);
+        static mat4x4 transformation(const vector3F& pos, const vector3F& forward, const vector3F& up);
+        static mat4x4 inverseTransformation(const vector3F& pos, const vector3F& forward, const vector3F& up);
     };
     #pragma endregion
 }
