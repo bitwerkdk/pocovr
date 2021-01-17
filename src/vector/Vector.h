@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// Vector.h
+// vector.h
 //
 //
 // Authors:
@@ -8,16 +8,16 @@
 #pragma once
 
 #include <Arduino.h>
-#include "VectorIterator.h"
+#include "vectorIterator.h"
 
 
 template <typename T>
-class Vector
+class vector
 {
 public:
-  Vector();
+  vector();
   template <size_t MAX_SIZE>
-  Vector(T (&values)[MAX_SIZE],
+  vector(T (&values)[MAX_SIZE],
     size_t size=0);
   template <size_t MAX_SIZE>
   void setStorage(T (&values)[MAX_SIZE],
@@ -38,7 +38,7 @@ public:
     size_t N>
   void fill(const U (&values)[N]);
   template <typename U>
-  void fill(const Vector<U> & values);
+  void fill(const vector<U> & values);
   template <typename U>
   void assign(size_t n,
     const U & value);
@@ -48,7 +48,7 @@ public:
     const U (&values)[N]);
   template <typename U>
   void assign(size_t n,
-    const Vector<U> & values);
+    const vector<U> & values);
   void push_back(const T & value);
   void pop_back();
   void remove(size_t index);
@@ -58,10 +58,10 @@ public:
   bool full() const;
   const T * data() const;
   T * data();
-  typedef VectorIterator<T> iterator;
+  typedef vectorIterator<T> iterator;
   iterator begin();
   iterator end();
-  typedef VectorIterator<const T> const_iterator;
+  typedef vectorIterator<const T> const_iterator;
   const_iterator begin() const;
   const_iterator end() const;
 
@@ -73,7 +73,7 @@ private:
 
 template <typename T>
 inline Print & operator <<(Print & stream,
-  const Vector<T> & vector)
+  const vector<T> & vector)
 {
   stream.print("[");
   for (size_t i=0; i<vector.size(); ++i)
@@ -88,4 +88,4 @@ inline Print & operator <<(Print & stream,
   return stream;
 }
 
-#include "VectorDefinitions.h"
+#include "vectorDefinitions.h"

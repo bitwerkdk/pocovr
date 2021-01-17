@@ -1,8 +1,8 @@
 // ----------------------------------------------------------------------------
-// Vector.cpp
+// vector.cpp
 //
 //
 // Authors:
 // Peter Polidoro peterpolidoro@gmail.com
 // ----------------------------------------------------------------------------
-#include "Vector.h"
+#include "vector.h"

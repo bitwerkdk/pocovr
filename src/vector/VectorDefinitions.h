@@ -1,19 +1,18 @@
 // ----------------------------------------------------------------------------
-// VectorDefinitions.h
+// vectorDefinitions.h
 //
 //
 // Authors:
 // Peter Polidoro peterpolidoro@gmail.com
 // ----------------------------------------------------------------------------
-#ifndef VECTOR_DEFINITIONS_H
-#define VECTOR_DEFINITIONS_H
+#pragma once
 
 #ifndef ARDUINO
 #include <cstring>
 #endif
 
 template <typename T>
-Vector<T>::Vector()
+vector<T>::vector()
 {
   values_ = NULL;
   max_size_ = 0;
@@ -22,7 +21,7 @@ Vector<T>::Vector()
 
 template <typename T>
 template <size_t MAX_SIZE>
-Vector<T>::Vector(T (&values)[MAX_SIZE],
+vector<T>::vector(T (&values)[MAX_SIZE],
   size_t size)
 {
   setStorage(values,size);
@@ -30,7 +29,7 @@ Vector<T>::Vector(T (&values)[MAX_SIZE],
 
 template <typename T>
 template <size_t MAX_SIZE>
-void Vector<T>::setStorage(T (&values)[MAX_SIZE],
+void vector<T>::setStorage(T (&values)[MAX_SIZE],
   size_t size)
 {
   values_ = values;
@@ -39,7 +38,7 @@ void Vector<T>::setStorage(T (&values)[MAX_SIZE],
 }
 
 template <typename T>
-void Vector<T>::setStorage(T * values,
+void vector<T>::setStorage(T * values,
   size_t max_size,
   size_t size)
 {
@@ -49,50 +48,50 @@ void Vector<T>::setStorage(T * values,
 }
 
 template <typename T>
-const T & Vector<T>::operator[](size_t index) const
+const T & vector<T>::operator[](size_t index) const
 {
   return values_[index];
 }
 
 template <typename T>
-T & Vector<T>::operator[](size_t index)
+T & vector<T>::operator[](size_t index)
 {
   return values_[index];
 }
 
 template <typename T>
-T & Vector<T>::at(size_t index)
+T & vector<T>::at(size_t index)
 {
   return values_[index];
 }
 
 template <typename T>
-const T & Vector<T>::at(size_t index) const
+const T & vector<T>::at(size_t index) const
 {
   return values_[index];
 }
 
 template <typename T>
-T & Vector<T>::front()
+T & vector<T>::front()
 {
   return values_[0];
 }
 
 template <typename T>
-T & Vector<T>::back()
+T & vector<T>::back()
 {
   return values_[size_-1];
 }
 
 template <typename T>
-void Vector<T>::clear()
+void vector<T>::clear()
 {
   size_ = 0;
 }
 
 template <typename T>
 template <typename U>
-void Vector<T>::fill(const U & value)
+void vector<T>::fill(const U & value)
 {
   assign(max_size_,value);
 }
@@ -100,21 +99,21 @@ void Vector<T>::fill(const U & value)
 template <typename T>
 template <typename U,
   size_t N>
-void Vector<T>::fill(const U (&values)[N])
+void vector<T>::fill(const U (&values)[N])
 {
   assign(N,values);
 }
 
 template <typename T>
 template <typename U>
-void Vector<T>::fill(const Vector<U> & values)
+void vector<T>::fill(const vector<U> & values)
 {
   assign(values.size(),values);
 }
 
 template <typename T>
 template <typename U>
-void Vector<T>::assign(size_t n,
+void vector<T>::assign(size_t n,
   const U & value)
 {
   size_t assign_size = ((n < max_size_) ? n : max_size_);
@@ -128,7 +127,7 @@ void Vector<T>::assign(size_t n,
 template <typename T>
 template <typename U,
   size_t N>
-void Vector<T>::assign(size_t n,
+void vector<T>::assign(size_t n,
   const U (&values)[N])
 {
   size_t n_smallest = ((n < N) ? n : N);
@@ -142,8 +141,8 @@ void Vector<T>::assign(size_t n,
 
 template <typename T>
 template <typename U>
-void Vector<T>::assign(size_t n,
-  const Vector<U> & values)
+void vector<T>::assign(size_t n,
+  const vector<U> & values)
 {
   size_t n_smallest = ((n < values.size()) ? n : values.size());
   size_t assign_size = ((n_smallest < max_size_) ? n_smallest : max_size_);
@@ -155,7 +154,7 @@ void Vector<T>::assign(size_t n,
 }
 
 template <typename T>
-void Vector<T>::push_back(const T & value)
+void vector<T>::push_back(const T & value)
 {
   if ((values_ != NULL) && (size_ < max_size_))
   {
@@ -164,7 +163,7 @@ void Vector<T>::push_back(const T & value)
 }
 
 template <typename T>
-void Vector<T>::pop_back()
+void vector<T>::pop_back()
 {
   if (size_ > 0)
   {
@@ -173,7 +172,7 @@ void Vector<T>::pop_back()
 }
 
 template <typename T>
-void Vector<T>::remove(size_t index)
+void vector<T>::remove(size_t index)
 {
   if (size_ > index)
   {
@@ -186,63 +185,61 @@ void Vector<T>::remove(size_t index)
 }
 
 template <typename T>
-size_t Vector<T>::size() const
+size_t vector<T>::size() const
 {
   return size_;
 }
 
 template <typename T>
-size_t Vector<T>::max_size() const
+size_t vector<T>::max_size() const
 {
   return max_size_;
 }
 
 template <typename T>
-bool Vector<T>::empty() const
+bool vector<T>::empty() const
 {
   return size_ == 0;
 }
 
 template <typename T>
-bool Vector<T>::full() const
+bool vector<T>::full() const
 {
   return size_ == max_size_;
 }
 
 template <typename T>
-T * Vector<T>::data()
+T * vector<T>::data()
 {
   return values_;
 }
 
 template <typename T>
-const T * Vector<T>::data() const
+const T * vector<T>::data() const
 {
   return values_;
 }
 
 template <typename T>
-typename Vector<T>::iterator Vector<T>::begin()
+typename vector<T>::iterator vector<T>::begin()
 {
   return iterator(values_);
 }
 
 template <typename T>
-typename Vector<T>::iterator Vector<T>::end()
+typename vector<T>::iterator vector<T>::end()
 {
   return iterator(values_,size_);
 }
 
 template <typename T>
-typename Vector<T>::const_iterator Vector<T>::begin() const
+typename vector<T>::const_iterator vector<T>::begin() const
 {
   return const_iterator(values_);
 }
 
 template <typename T>
-typename Vector<T>::const_iterator Vector<T>::end() const
+typename vector<T>::const_iterator vector<T>::end() const
 {
   return const_iterator(values_,size_);
 }
-
-#endif

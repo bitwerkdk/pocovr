@@ -23,6 +23,11 @@ namespace math {
 
     #define FX_DEG_TO_RAD(x) FX_MUL((math::fixed)(x), FX_FROM_F(0.0174533))
     #define FX_RAD_TO_DEG(x) FX_MUL((math::fixed)(x), FX_FROM_F(57.2957795))
+
+    fixed fxMin(const fixed& a, const fixed& b);
+    fixed fxMax(const fixed& a, const fixed& b);
+    fixed fxClamp(const fixed& value, const fixed& min, const fixed& max);
+    fixed fxLerp(const fixed& a, const fixed& b, const fixed& t);
     #pragma endregion
 
     #pragma region vector

@@ -23,6 +23,19 @@ namespace math {
     fixed fxTan(const fixed& x) {
         return FX_FROM_F(tan(FX_TO_F(x)));
     }
+
+    fixed fxMin(const fixed& a, const fixed& b) {
+        return a < b ? a : b;
+    }
+    fixed fxMax(const fixed& a, const fixed& b) {
+        return a > b ? a : b;
+    }
+    fixed fxClamp(const fixed& value, const fixed& min, const fixed& max) {
+        return fxMin(fxMax(value, min), max);
+    }
+    fixed fxLerp(const fixed& a, const fixed& b, const fixed& t) {
+        return FX_ADD(a, FX_MUL(FX_SUB(b, a), t));
+    }
     #pragma endregion
 
     #pragma region vector
@@ -40,7 +53,7 @@ namespace math {
         return *this / magnitude();
     }
     fixed vector3F::dot(const vector3F& a, const vector3F& b) {
-        return FX_ADD(FX_ADD(FX_MUL(a.x, b.x), FX_MUL(a.x, b.x)), FX_MUL(a.x, b.x));
+        return FX_ADD(FX_ADD(FX_MUL(a.x, b.x), FX_MUL(a.y, b.y)), FX_MUL(a.z, b.z));
     }
     vector3F vector3F::cross(const vector3F& a, const vector3F& b) {
         return vector3F(FX_SUB(FX_MUL(a.y, b.z), FX_MUL(a.z, b.y)), FX_SUB(FX_MUL(a.z, b.x), FX_MUL(a.x, b.z)), FX_SUB(FX_MUL(a.x, b.y), FX_MUL(a.y, b.x)));
@@ -84,21 +97,21 @@ namespace math {
     mat4x4 mat4x4::xRotation(const fixed& angleDeg) {
         fixed angleRad = FX_DEG_TO_RAD(angleDeg);
         return mat4x4(FX_FROM_I(1), 0, 0, 0,
-                      0, fxCos(angleRad), -fxSin(angleRad), 0,
-                      0, fxSin(angleRad), fxCos(angleRad), 0,
+                      0, fxCos(angleRad), fxSin(angleRad), 0,
+                      0, -fxSin(angleRad), fxCos(angleRad), 0,
                       0, 0, 0, FX_FROM_I(1));
     }
     mat4x4 mat4x4::yRotation(const fixed& angleDeg) {
         fixed angleRad = FX_DEG_TO_RAD(angleDeg);
-        return mat4x4(fxCos(angleRad), 0, fxSin(angleRad), 0,
+        return mat4x4(fxCos(angleRad), 0, -fxSin(angleRad), 0,
                       0, FX_FROM_I(1), 0, 0,
-                      -fxSin(angleRad), 0, fxCos(angleRad), 0,
+                      fxSin(angleRad), 0, fxCos(angleRad), 0,
                       0, 0, 0, FX_FROM_I(1));
     }
     mat4x4 mat4x4::zRotation(const fixed& angleDeg) {
         fixed angleRad = FX_DEG_TO_RAD(angleDeg);
-        return mat4x4(fxCos(angleRad), -fxSin(angleRad), 0, 0,
-                      fxSin(angleRad), fxCos(angleRad), 0, 0,
+        return mat4x4(fxCos(angleRad), fxSin(angleRad), 0, 0,
+                      -fxSin(angleRad), fxCos(angleRad), 0, 0,
                       0, 0, FX_FROM_I(1), 0,
                       0, 0, 0, FX_FROM_I(1));
     }
