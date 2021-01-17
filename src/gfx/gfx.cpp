@@ -4,7 +4,9 @@
 #include <SPI.h>
 #include <TFT_eSPI.h>
 #include "../math/math.h"
+#include "../objects/camera.h"
 #include "../objects/mesh.h"
+#include "../objects/transform.h"
 #include "../state/state.h"
 #include "../vector/Vector.h"
 
@@ -23,13 +25,15 @@ namespace gfx {
     Vector<objects::mesh*> meshes;
     Vector<objects::tri> tris;
 
-    void calculateTriangles(const Vector<objects::mesh*>& meshes, Vector<objects::tri>& outTris) {
+    objects::camera leftCamera(math::vector3F(FX_FROM_F(-0.0315), 0, 0));
+    objects::camera rightCamera(math::vector3F(FX_FROM_F(0.0315), 0, 0));
+
+    void calculateTriangles(const Vector<objects::mesh*>& meshes, Vector<objects::tri>& outTris, const objects::camera camera) {
         outTris.clear();
-        math::mat4x4 viewMat = math::mat4x4::inverseTransformation(math::vector3F(FX_FROM_F(0), FX_FROM_F(0), FX_FROM_F(0)), math::vector3F(FX_FROM_F(0), FX_FROM_F(0), FX_FROM_F(1)), math::vector3F(FX_FROM_F(0), FX_FROM_F(1), FX_FROM_F(0)));
-        math::mat4x4 projMat = math::mat4x4::projection(FX_FROM_F(90), FX_FROM_F(1), FX_FROM_F(10), FX_FROM_I(TFT_WIDTH), FX_FROM_I(TFT_HEIGHT));
+        math::mat4x4 viewMat = math::mat4x4::inverseTransformation(camera.objTransform.pos, camera.objTransform.getForward(), camera.objTransform.getUp());
         for (const objects::mesh* mesh : meshes)
         {
-            math::mat4x4 transformMat = math::mat4x4::transformation(mesh->pos, mesh->forward, mesh->up);
+            math::mat4x4 transformMat = math::mat4x4::transformation(mesh->objTransform.pos, mesh->objTransform.getForward(), mesh->objTransform.getUp());
             for (objects::tri tri : mesh->tris)
             {
                 math::vector4F p0 = math::vector4F(tri.p[0].x, tri.p[0].y, tri.p[0].z, FX_FROM_I(1));
@@ -44,11 +48,11 @@ namespace gfx {
                 p1 = viewMat * p1;
                 p2 = viewMat * p2;
 
-                p0 = projMat * p0;
+                p0 = camera.projMat * p0;
                 p0 /= p0.w != 0 ? p0.w : 1;
-                p1 = projMat * p1;
+                p1 = camera.projMat * p1;
                 p1 /= p1.w != 0 ? p1.w : 1;
-                p2 = projMat * p2;
+                p2 = camera.projMat * p2;
                 p2 /= p2.w != 0 ? p2.w : 1;
 
                 outTris.push_back(objects::tri(math::vector3F(p0.x, p0.y, p0.z), math::vector3F(p1.x, p1.y, p1.z), math::vector3F(p2.x, p2.y, p2.z)));
@@ -98,7 +102,7 @@ namespace gfx {
         meshStorageArray = (objects::mesh**)malloc(sizeof(objects::mesh*) * MAX_MESHES);
         meshes.setStorage(meshStorageArray, MAX_MESHES, 0);
 
-        objects::mesh* pyramid = new objects::mesh();
+        objects::mesh* pyramid = new objects::mesh(math::vector3F(0, 0, FX_FROM_F(3)));
         objects::tri* pyramidTriStorageArray;
         pyramidTriStorageArray = (objects::tri*)malloc(sizeof(objects::tri) * 10);
         pyramid->tris.setStorage(pyramidTriStorageArray, 10, 0);
@@ -108,10 +112,7 @@ namespace gfx {
         pyramid->tris.push_back(objects::tri(math::vector3F(FX_FROM_F(1), FX_FROM_F(-1), FX_FROM_F(-1)), math::vector3F(FX_FROM_F(0), FX_FROM_F(1), FX_FROM_F(0)), math::vector3F(FX_FROM_F(1), FX_FROM_F(-1), FX_FROM_F(1))));
         pyramid->tris.push_back(objects::tri(math::vector3F(FX_FROM_F(-1), FX_FROM_F(-1), FX_FROM_F(-1)), math::vector3F(FX_FROM_F(0), FX_FROM_F(1), FX_FROM_F(0)), math::vector3F(FX_FROM_F(1), FX_FROM_F(-1), FX_FROM_F(-1))));
         pyramid->tris.push_back(objects::tri(math::vector3F(FX_FROM_F(-1), FX_FROM_F(-1), FX_FROM_F(1)), math::vector3F(FX_FROM_F(0), FX_FROM_F(1), FX_FROM_F(0)), math::vector3F(FX_FROM_F(-1), FX_FROM_F(-1), FX_FROM_F(-1))));
-        //pyramid->tris.push_back(objects::tri(math::vector3F(FX_FROM_F(-1), FX_FROM_F(-1), FX_FROM_F(-1)), math::vector3F(FX_FROM_F(-1), FX_FROM_F(-1), FX_FROM_F(1)), math::vector3F(FX_FROM_F(1), FX_FROM_F(-1), FX_FROM_F(1))));
-        //pyramid->tris.push_back(objects::tri(math::vector3F(FX_FROM_F(-1), FX_FROM_F(-1), FX_FROM_F(-1)), math::vector3F(FX_FROM_F(1), FX_FROM_F(-1), FX_FROM_F(1)), math::vector3F(FX_FROM_F(1), FX_FROM_F(-1), FX_FROM_F(-1))));
-        void* pyramidPointer = pyramid;
-        meshes.push_back((objects::mesh*)pyramidPointer);
+        meshes.push_back(pyramid);
         
         // Set tris
         objects::tri* triStorageArray;
@@ -125,10 +126,10 @@ namespace gfx {
     }
 
     void loop() {
+        meshes[0]->objTransform.rotateY(FX_FROM_F(4));
+        
         randomSeed(millis());
         counter++;
-
-        calculateTriangles(meshes, tris);
 
         // Clear both displays
         digitalWrite(TFT_CS1, LOW);
@@ -137,11 +138,13 @@ namespace gfx {
 
         // Write to display 1
         setActiveScreen(TFT_CS1, TFT_CS2);
+        calculateTriangles(meshes, tris, rightCamera);
         drawTriangles(tris);
         drawFps();
         
         // Write to display 2
         setActiveScreen(TFT_CS2, TFT_CS1);
+        calculateTriangles(meshes, tris, leftCamera);
         drawTriangles(tris);
         drawFps();
     }

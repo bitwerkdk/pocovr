@@ -20,6 +20,9 @@ namespace math {
     #define FX_TO_I(x) (((math::fixed)(x)) >> FX_PRECISION)
     #define FX_FROM_F(x) (math::fixed)((float)(x) * math::fxPowUint(2, FX_PRECISION))
     #define FX_TO_F(x) ((float)(x) / math::fxPowUint(2, FX_PRECISION))
+
+    #define FX_DEG_TO_RAD(x) FX_MUL((math::fixed)(x), FX_FROM_F(0.0174533))
+    #define FX_RAD_TO_DEG(x) FX_MUL((math::fixed)(x), FX_FROM_F(57.2957795))
     #pragma endregion
 
     #pragma region vector

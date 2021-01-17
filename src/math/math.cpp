@@ -81,26 +81,30 @@ namespace math {
         return result;
     }
 
-    mat4x4 mat4x4::xRotation(const fixed& angle) {
+    mat4x4 mat4x4::xRotation(const fixed& angleDeg) {
+        fixed angleRad = FX_DEG_TO_RAD(angleDeg);
         return mat4x4(FX_FROM_I(1), 0, 0, 0,
-                      0, fxCos(angle), -fxSin(angle), 0,
-                      0, fxSin(angle), fxCos(angle), 0,
+                      0, fxCos(angleRad), -fxSin(angleRad), 0,
+                      0, fxSin(angleRad), fxCos(angleRad), 0,
                       0, 0, 0, FX_FROM_I(1));
     }
-    mat4x4 mat4x4::yRotation(const fixed& angle) {
-        return mat4x4(fxCos(angle), 0, fxSin(angle), 0,
+    mat4x4 mat4x4::yRotation(const fixed& angleDeg) {
+        fixed angleRad = FX_DEG_TO_RAD(angleDeg);
+        return mat4x4(fxCos(angleRad), 0, fxSin(angleRad), 0,
                       0, FX_FROM_I(1), 0, 0,
-                      -fxSin(angle), 0, fxCos(angle), 0,
+                      -fxSin(angleRad), 0, fxCos(angleRad), 0,
                       0, 0, 0, FX_FROM_I(1));
     }
-    mat4x4 mat4x4::zRotation(const fixed& angle) {
-        return mat4x4(fxCos(angle), -fxSin(angle), 0, 0,
-                      fxSin(angle), fxCos(angle), 0, 0,
+    mat4x4 mat4x4::zRotation(const fixed& angleDeg) {
+        fixed angleRad = FX_DEG_TO_RAD(angleDeg);
+        return mat4x4(fxCos(angleRad), -fxSin(angleRad), 0, 0,
+                      fxSin(angleRad), fxCos(angleRad), 0, 0,
                       0, 0, FX_FROM_I(1), 0,
                       0, 0, 0, FX_FROM_I(1));
     }
-    mat4x4 mat4x4::projection(const fixed& fov, const fixed& nearPlane, const fixed& farPlane, const fixed& width, const fixed& height) {
-        fixed f = FX_DIV(FX_FROM_I(1), fxTan(fov >> 1));
+    mat4x4 mat4x4::projection(const fixed& fovDeg, const fixed& nearPlane, const fixed& farPlane, const fixed& width, const fixed& height) {
+        fixed fovRad = FX_DEG_TO_RAD(fovDeg);
+        fixed f = FX_DIV(FX_FROM_I(1), fxTan(fovRad >> 1));
         fixed q = FX_DIV(farPlane, FX_SUB(farPlane, nearPlane));
         return mat4x4(FX_MUL(FX_DIV(height, width), f), 0, 0, 0,
                       0, f, 0, 0,

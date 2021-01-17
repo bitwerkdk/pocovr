@@ -1,5 +1,6 @@
 #pragma once
 
+#include "transform.h"
 #include "../math/math.h"
 #include "../vector/Vector.h"
 
@@ -14,7 +15,10 @@ namespace objects {
     struct mesh
     {
         Vector<tri> tris;
-        math::vector3F pos = math::vector3F(0, 0, FX_FROM_F(3));
-        math::vector3F forward = math::vector3F(0, 0, FX_FROM_F(1)), up = math::vector3F(0, FX_FROM_F(1), 0);
+        transform objTransform;
+
+        mesh() { }
+        mesh(const math::vector3F& pos) : objTransform(transform(pos)) { }
+        mesh(const math::vector3F& pos, const math::vector3F& forward, const math::vector3F& up) : objTransform(transform(pos, forward, up)) { }
     };
 }
