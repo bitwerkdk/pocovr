@@ -24,6 +24,8 @@ namespace gfx {
     unsigned long startTime;
     unsigned long counter;
     
+    TFT_eSprite halfFrameBuffer(&tft);
+
     vector<objects::mesh*> meshes;
     vector<objects::screenTri> tris;
 
@@ -40,151 +42,6 @@ namespace gfx {
     };
     
     vector<light> lights;
-
-    unsigned char pixelsDrawn[TFT_WIDTH * TFT_HEIGHT / 8];
-
-    #define CA_GET_BIT(charArray, i) ((unsigned char)(charArray[(i) >> 3] << ((i) % 8)) >> 7)
-    #define CA_GET_BYTE(charArray, i) (unsigned char)charArray[(i) >> 3]
-    #define CA_SET_BIT(charArray, i) (charArray[(i) >> 3] |= 0x80 >> ((i) % 8))
-    #define CA_SET_BYTE_FROM(charArray, i) (charArray[(i) >> 3] |= 0xFF >> ((i) % 8))
-    #define CA_SET_BYTE_TO(charArray, i) (charArray[(i) >> 3] |= 0xFF << (7 - ((i) % 8)))
-
-    void fillScreen(const unsigned int& color) {
-        for (int y = 0; y < TFT_HEIGHT; y++)
-		{
-            unsigned int startX = 0, endX = 0;
-            for (int x = 0; x < TFT_WIDTH; x += 8)
-            {
-                if(CA_GET_BYTE(pixelsDrawn, y * TFT_WIDTH + x) == 0x00) {
-                    endX = x + 7;
-                }
-                else if(CA_GET_BYTE(pixelsDrawn, y * TFT_WIDTH + x) == 0xFF) {
-                    if(endX > startX) {
-                        tft.drawFastHLine(startX, y, endX - startX + 1, color);
-                    }
-                    startX = x + 7;
-                }
-                else {
-                    for (int i = 0; i < 8; i++)
-                    {
-                        if(!CA_GET_BIT(pixelsDrawn, y * TFT_WIDTH + x + i)) {
-                            endX = x + i;
-                        }
-                        else if(CA_GET_BIT(pixelsDrawn, y * TFT_WIDTH + x + i)) {
-                            if(endX > startX) {
-                                tft.drawFastHLine(startX, y, endX - startX + 1, color);
-                            }
-                            startX = x + i;
-                        }
-                    }
-                }
-            }
-            if(endX > startX) {
-                tft.drawFastHLine(startX, y, endX - startX + 1, color);
-            }
-		}
-    }
-
-	void fillFlatTopTriangle(const int& bottomX, const int& bottomY, const int& leftX, const int& leftY, const int& rightX, const int& rightY, const unsigned int& color) {
-		int deltaY = bottomY - leftY;
-		math::fixed fLeft = FX_FROM_I(bottomX - leftX) / deltaY;
-		math::fixed fRight = FX_FROM_I(bottomX - rightX) / deltaY;
-
-		unsigned int startX, endX;
-        unsigned int byteStartX, byteEndX, byteY;
-		for (int y = leftY; y < bottomY && y < TFT_HEIGHT; y++)
-		{
-			startX = math::fxClamp(leftX + FX_TO_I((y - leftY) * fLeft), 0, TFT_WIDTH);
-			endX = math::fxClamp(rightX + FX_TO_I((y - leftY) * fRight) + 1, 0, TFT_WIDTH);
-            if(endX - startX >= 16) {
-                byteStartX = (startX + 8) >> 3;
-                byteEndX = endX >> 3;
-                byteY = ((y * TFT_WIDTH) >> 3);
-			    memset(pixelsDrawn + byteY + byteStartX, 0xFF, byteEndX - byteStartX);
-                CA_SET_BYTE_FROM(pixelsDrawn, y * TFT_WIDTH + startX);
-                CA_SET_BYTE_TO(pixelsDrawn, y * TFT_WIDTH + endX - 1);
-            }
-            else {
-                for (int x = startX; x < endX; x++) {
-                    CA_SET_BIT(pixelsDrawn, y * TFT_WIDTH + x);
-                }
-            }
-            //tft.drawFastHLine(startX, y, endX - startX, color);
-		}
-	}
-
-	void fillFlatBottomTriangle(const int& topX, const int& topY, const int& leftX, const int& leftY, const int& rightX, const int& rightY, const unsigned int& color) {
-		int deltaY = leftY - topY;
-		math::fixed fLeft = FX_FROM_I(leftX - topX) / deltaY;
-		math::fixed fRight = FX_FROM_I(rightX - topX) / deltaY;
-
-		unsigned int startX, endX;
-        unsigned int byteStartX, byteEndX, byteY;
-		for (int y = topY; y < leftY && y < TFT_HEIGHT; y++)
-		{
-			startX = math::fxClamp(topX + FX_TO_I((y - topY) * fLeft), 0, TFT_WIDTH);
-			endX = math::fxClamp(topX + FX_TO_I((y - topY) * fRight) + 1, 0, TFT_WIDTH);
-            if(endX - startX >= 16) {
-                byteStartX = (startX + 8) >> 3;
-                byteEndX = endX >> 3;
-                byteY = ((y * TFT_WIDTH) >> 3);
-			    memset(pixelsDrawn + byteY + byteStartX, 0xFF, byteEndX - byteStartX);
-                CA_SET_BYTE_FROM(pixelsDrawn, y * TFT_WIDTH + startX);
-                CA_SET_BYTE_TO(pixelsDrawn, y * TFT_WIDTH + endX - 1);
-            }
-            else {
-                for (int x = startX; x < endX; x++) {
-                    CA_SET_BIT(pixelsDrawn, y * TFT_WIDTH + x);
-                }
-            }
-            //tft.drawFastHLine(startX, y, endX - startX, color);
-		}
-	}
-
-	void fillTriangle(const int& aX, const int& aY, const int& bX, const int& bY, const int& cX, const int& cY, const unsigned int& color) {
-		// Sort y value
-		const int* p0X = &aX, * p0Y = &aY, * p1X = &bX, * p1Y = &bY, * p2X = &cX, * p2Y = &cY;
-		if (*p2Y < *p0Y) { std::swap(p0X, p2X); std::swap(p0Y, p2Y); }
-		if (*p2Y < *p1Y) { std::swap(p1X, p2X); std::swap(p1Y, p2Y); }
-		if (*p1Y < *p0Y) { std::swap(p0X, p1X); std::swap(p0Y, p1Y); }
-
-		// Check if flat
-		if (*p0Y == *p2Y) { // Completely flat
-            if(*p0X == *p1X && *p1X == *p2X) { tft.drawPixel(*p0X, *p0Y, color); }
-            else if(*p0X <= *p1X && *p1X <= *p2X) { tft.drawFastHLine(*p0X, *p0Y, *p2X - *p0X, color); }
-            else if(*p2X <= *p0X && *p0X <= *p1X) { tft.drawFastHLine(*p2X, *p2Y, *p1X - *p2X, color); }
-            else if(*p1X <= *p2X && *p2X <= *p0X) { tft.drawFastHLine(*p1X, *p1Y, *p0X - *p1X, color); }
-            return;
-        }
-		if (*p0Y == *p1Y) // Flat top
-		{
-			if (p0X > p1X) { std::swap(p0X, p1X); std::swap(p0Y, p1Y); }
-			fillFlatTopTriangle(*p2X, *p2Y, *p0X, *p0Y, *p1X, *p1Y, color);
-			return;
-		}
-		if (*p1Y == *p2Y) // Flat bottom
-		{
-			if (p1X > p2X) { std::swap(p1X, p2X); std::swap(p1Y, p2Y); }
-			fillFlatBottomTriangle(*p0X, *p0Y, *p1X, *p1Y, *p2X, *p2Y, color);
-			return;
-		}
-
-		// Get division point on major side
-        int divisionPointX = math::fxLerp(*p0X, *p2X, FX_FROM_I(*p1Y - *p0Y) / (*p2Y - *p0Y));
-        int divisionPointY = math::fxLerp(*p0Y, *p2Y, FX_FROM_I(*p1Y - *p0Y) / (*p2Y - *p0Y));
-
-		// Check major side
-		if (*p1X > divisionPointX) // Major left
-		{
-			fillFlatBottomTriangle(*p0X, *p0Y, divisionPointX, divisionPointY, *p1X, *p1Y, color);
-			fillFlatTopTriangle(*p2X, *p2Y, divisionPointX, divisionPointY, *p1X, *p1Y, color);
-		}
-		else // Major right
-		{
-			fillFlatBottomTriangle(*p0X, *p0Y, *p1X, *p1Y, divisionPointX, divisionPointY, color);
-			fillFlatTopTriangle(*p2X, *p2Y, *p1X, *p1Y, divisionPointX, divisionPointY, color);
-		}
-	}
 
     void calculateTriangles(const vector<objects::mesh*>& meshes, vector<objects::screenTri>& outTris, const vector<light>& lights, const objects::camera camera) {
         // Clear triangle vector
@@ -245,12 +102,20 @@ namespace gfx {
     }
 
     void drawTriangles(const vector<objects::screenTri>& triangles) {
+        halfFrameBuffer.fillSprite(0x0000);
         for (const objects::screenTri& t : triangles)
         {
             unsigned short color = RGB565((unsigned short)(31 * FX_TO_F(t.brightness)), (unsigned short)(63 * FX_TO_F(t.brightness)), (unsigned short)(31 * FX_TO_F(t.brightness)));
-            tft.fillTriangle(FX_TO_F(t.p[0].x) * TFT_WIDTH + (TFT_WIDTH >> 1), FX_TO_F(t.p[0].y) * -TFT_HEIGHT + (TFT_HEIGHT >> 1), FX_TO_F(t.p[1].x) * TFT_WIDTH + (TFT_WIDTH >> 1), FX_TO_F(t.p[1].y) * -TFT_HEIGHT + (TFT_HEIGHT >> 1), FX_TO_F(t.p[2].x) * TFT_WIDTH + (TFT_WIDTH >> 1), FX_TO_F(t.p[2].y) * -TFT_HEIGHT + (TFT_HEIGHT >> 1), color);
-            fillTriangle(FX_TO_F(t.p[0].x) * TFT_WIDTH + (TFT_WIDTH >> 1), FX_TO_F(t.p[0].y) * -TFT_HEIGHT + (TFT_HEIGHT >> 1), FX_TO_F(t.p[1].x) * TFT_WIDTH + (TFT_WIDTH >> 1), FX_TO_F(t.p[1].y) * -TFT_HEIGHT + (TFT_HEIGHT >> 1), FX_TO_F(t.p[2].x) * TFT_WIDTH + (TFT_WIDTH >> 1), FX_TO_F(t.p[2].y) * -TFT_HEIGHT + (TFT_HEIGHT >> 1), color);
+            halfFrameBuffer.fillTriangle(FX_TO_F(t.p[0].x) * TFT_WIDTH + (TFT_WIDTH >> 1), FX_TO_F(t.p[0].y) * -TFT_HEIGHT + (TFT_HEIGHT >> 1), FX_TO_F(t.p[1].x) * TFT_WIDTH + (TFT_WIDTH >> 1), FX_TO_F(t.p[1].y) * -TFT_HEIGHT + (TFT_HEIGHT >> 1), FX_TO_F(t.p[2].x) * TFT_WIDTH + (TFT_WIDTH >> 1), FX_TO_F(t.p[2].y) * -TFT_HEIGHT + (TFT_HEIGHT >> 1), color);
         }
+        halfFrameBuffer.pushSprite(0, 0);
+        halfFrameBuffer.fillSprite(0x0000);
+        for (const objects::screenTri& t : triangles)
+        {
+            unsigned short color = RGB565((unsigned short)(31 * FX_TO_F(t.brightness)), (unsigned short)(63 * FX_TO_F(t.brightness)), (unsigned short)(31 * FX_TO_F(t.brightness)));
+            halfFrameBuffer.fillTriangle(FX_TO_F(t.p[0].x) * TFT_WIDTH + (TFT_WIDTH >> 1), FX_TO_F(t.p[0].y) * -TFT_HEIGHT, FX_TO_F(t.p[1].x) * TFT_WIDTH + (TFT_WIDTH >> 1), FX_TO_F(t.p[1].y) * -TFT_HEIGHT, FX_TO_F(t.p[2].x) * TFT_WIDTH + (TFT_WIDTH >> 1), FX_TO_F(t.p[2].y) * -TFT_HEIGHT, color);
+        }
+        halfFrameBuffer.pushSprite(0, TFT_HEIGHT >> 1);
     }
 
     void drawAvgFps() {
@@ -287,6 +152,9 @@ namespace gfx {
         digitalWrite(TFT_CS1, HIGH);
         digitalWrite(TFT_CS2, HIGH);
 
+        //Initialize frame buffer
+        halfFrameBuffer.createSprite(TFT_WIDTH, TFT_HEIGHT >> 1);
+
         startTime = millis();
 
         // Set meshes
@@ -309,6 +177,8 @@ namespace gfx {
         lights = utils::makeVector<light>(MAX_LIGHTS);
         lights.push_back(light(math::vector3F(FX_FROM_F(2), FX_FROM_F(1), FX_FROM_F(-1)), FX_FROM_F(1)));
         lights.push_back(light(math::vector3F(FX_FROM_F(-2), FX_FROM_F(1), FX_FROM_F(-1)), FX_FROM_F(0.5)));
+
+        Serial.println((int)halfFrameBuffer.getPointer() - (int)&halfFrameBuffer);
     }
 
     void loop() {
@@ -324,22 +194,22 @@ namespace gfx {
             tft.fillScreen(TFT_BLACK);
         //}*/
 
-        memset(pixelsDrawn, 0x00, sizeof(pixelsDrawn));
+        //halfFrameBuffer.fillSprite(0x0000);
+
+        //memset(pixelsDrawn, 0x00, sizeof(pixelsDrawn));
 
         // Write to display 1
         setActiveScreen(TFT_CS1, TFT_CS2);
         calculateTriangles(meshes, tris, lights, rightCamera);
         drawTriangles(tris);
-        fillScreen(TFT_BLACK);
         drawAvgMillis();
 
-        memset(pixelsDrawn, 0x00, sizeof(pixelsDrawn));
+        //memset(pixelsDrawn, 0x00, sizeof(pixelsDrawn));
         
         // Write to display 2
         setActiveScreen(TFT_CS2, TFT_CS1);
         calculateTriangles(meshes, tris, lights, leftCamera);
         drawTriangles(tris);
-        fillScreen(TFT_BLACK);
         drawAvgMillis();
     }
 }
