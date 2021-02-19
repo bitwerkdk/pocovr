@@ -43,23 +43,40 @@ namespace gfx {
 
     unsigned char pixelsDrawn[TFT_WIDTH * TFT_HEIGHT / 8];
 
-    #define GET_BIT_FROM_CHAR_ARRAY(charArray, i) ((unsigned char)(charArray[i >> 3] << ((i) % 8)) >> 7)
-    #define SET_BIT_IN_CHAR_ARRAY(charArray, i, value) (charArray[i >> 3] |= 0x80 >> ((i) % 8))
+    #define CA_GET_BIT(charArray, i) ((unsigned char)(charArray[(i) >> 3] << ((i) % 8)) >> 7)
+    #define CA_GET_BYTE(charArray, i) (unsigned char)charArray[(i) >> 3]
+    #define CA_SET_BIT(charArray, i) (charArray[(i) >> 3] |= 0x80 >> ((i) % 8))
+    #define CA_SET_BYTE_FROM(charArray, i) (charArray[(i) >> 3] |= 0xFF >> ((i) % 8))
+    #define CA_SET_BYTE_TO(charArray, i) (charArray[(i) >> 3] |= 0xFF << (7 - ((i) % 8)))
 
     void fillScreen(const unsigned int& color) {
         for (int y = 0; y < TFT_HEIGHT; y++)
 		{
             unsigned int startX = 0, endX = 0;
-            for (int x = 0; x < TFT_WIDTH; x++)
+            for (int x = 0; x < TFT_WIDTH; x += 8)
             {
-                if(!GET_BIT_FROM_CHAR_ARRAY(pixelsDrawn, y * TFT_WIDTH + x)) {
-                    endX = x;
+                if(CA_GET_BYTE(pixelsDrawn, y * TFT_WIDTH + x) == 0x00) {
+                    endX = x + 7;
                 }
-                else {
+                else if(CA_GET_BYTE(pixelsDrawn, y * TFT_WIDTH + x) == 0xFF) {
                     if(endX > startX) {
                         tft.drawFastHLine(startX, y, endX - startX + 1, color);
                     }
-                    startX = x;
+                    startX = x + 7;
+                }
+                else {
+                    for (int i = 0; i < 8; i++)
+                    {
+                        if(!CA_GET_BIT(pixelsDrawn, y * TFT_WIDTH + x + i)) {
+                            endX = x + i;
+                        }
+                        else if(CA_GET_BIT(pixelsDrawn, y * TFT_WIDTH + x + i)) {
+                            if(endX > startX) {
+                                tft.drawFastHLine(startX, y, endX - startX + 1, color);
+                            }
+                            startX = x + i;
+                        }
+                    }
                 }
             }
             if(endX > startX) {
@@ -78,25 +95,21 @@ namespace gfx {
 		for (int y = leftY; y < bottomY && y < TFT_HEIGHT; y++)
 		{
 			startX = math::fxClamp(leftX + FX_TO_I((y - leftY) * fLeft), 0, TFT_WIDTH);
-			endX = math::fxClamp(rightX + FX_TO_I((y - leftY) * fRight), 0, TFT_WIDTH);
+			endX = math::fxClamp(rightX + FX_TO_I((y - leftY) * fRight) + 1, 0, TFT_WIDTH);
             if(endX - startX >= 16) {
                 byteStartX = (startX + 8) >> 3;
                 byteEndX = endX >> 3;
                 byteY = ((y * TFT_WIDTH) >> 3);
 			    memset(pixelsDrawn + byteY + byteStartX, 0xFF, byteEndX - byteStartX);
-                for (int x = startX; x < byteStartX << 3; x++) {
-                    SET_BIT_IN_CHAR_ARRAY(pixelsDrawn, y * TFT_WIDTH + x, true);
-                }
-                for (int x = byteEndX << 3; x < endX; x++) {
-                    SET_BIT_IN_CHAR_ARRAY(pixelsDrawn, y * TFT_WIDTH + x, true);
-                }
+                CA_SET_BYTE_FROM(pixelsDrawn, y * TFT_WIDTH + startX);
+                CA_SET_BYTE_TO(pixelsDrawn, y * TFT_WIDTH + endX - 1);
             }
             else {
                 for (int x = startX; x < endX; x++) {
-                    SET_BIT_IN_CHAR_ARRAY(pixelsDrawn, y * TFT_WIDTH + x, true);
+                    CA_SET_BIT(pixelsDrawn, y * TFT_WIDTH + x);
                 }
             }
-            tft.drawFastHLine(startX, y, endX - startX, color);
+            //tft.drawFastHLine(startX, y, endX - startX, color);
 		}
 	}
 
@@ -110,37 +123,39 @@ namespace gfx {
 		for (int y = topY; y < leftY && y < TFT_HEIGHT; y++)
 		{
 			startX = math::fxClamp(topX + FX_TO_I((y - topY) * fLeft), 0, TFT_WIDTH);
-			endX = math::fxClamp(topX + FX_TO_I((y - topY) * fRight), 0, TFT_WIDTH);
+			endX = math::fxClamp(topX + FX_TO_I((y - topY) * fRight) + 1, 0, TFT_WIDTH);
             if(endX - startX >= 16) {
                 byteStartX = (startX + 8) >> 3;
                 byteEndX = endX >> 3;
                 byteY = ((y * TFT_WIDTH) >> 3);
 			    memset(pixelsDrawn + byteY + byteStartX, 0xFF, byteEndX - byteStartX);
-                for (int x = startX; x < byteStartX << 3; x++) {
-                    SET_BIT_IN_CHAR_ARRAY(pixelsDrawn, y * TFT_WIDTH + x, true);
-                }
-                for (int x = byteEndX << 3; x < endX; x++) {
-                    SET_BIT_IN_CHAR_ARRAY(pixelsDrawn, y * TFT_WIDTH + x, true);
-                }
+                CA_SET_BYTE_FROM(pixelsDrawn, y * TFT_WIDTH + startX);
+                CA_SET_BYTE_TO(pixelsDrawn, y * TFT_WIDTH + endX - 1);
             }
             else {
                 for (int x = startX; x < endX; x++) {
-                    SET_BIT_IN_CHAR_ARRAY(pixelsDrawn, y * TFT_WIDTH + x, true);
+                    CA_SET_BIT(pixelsDrawn, y * TFT_WIDTH + x);
                 }
             }
-            tft.drawFastHLine(startX, y, endX - startX, color);
+            //tft.drawFastHLine(startX, y, endX - startX, color);
 		}
 	}
 
 	void fillTriangle(const int& aX, const int& aY, const int& bX, const int& bY, const int& cX, const int& cY, const unsigned int& color) {
-		// Sort p1Y y value
+		// Sort y value
 		const int* p0X = &aX, * p0Y = &aY, * p1X = &bX, * p1Y = &bY, * p2X = &cX, * p2Y = &cY;
 		if (*p2Y < *p0Y) { std::swap(p0X, p2X); std::swap(p0Y, p2Y); }
 		if (*p2Y < *p1Y) { std::swap(p1X, p2X); std::swap(p1Y, p2Y); }
 		if (*p1Y < *p0Y) { std::swap(p0X, p1X); std::swap(p0Y, p1Y); }
 
 		// Check if flat
-		//if (p0Y == p1Y && p1Y == p2Y) { DrawTriangle(a, b, c, buffer, color); return; } // Completely flat
+		if (*p0Y == *p2Y) { // Completely flat
+            if(*p0X == *p1X && *p1X == *p2X) { tft.drawPixel(*p0X, *p0Y, color); }
+            else if(*p0X <= *p1X && *p1X <= *p2X) { tft.drawFastHLine(*p0X, *p0Y, *p2X - *p0X, color); }
+            else if(*p2X <= *p0X && *p0X <= *p1X) { tft.drawFastHLine(*p2X, *p2Y, *p1X - *p2X, color); }
+            else if(*p1X <= *p2X && *p2X <= *p0X) { tft.drawFastHLine(*p1X, *p1Y, *p0X - *p1X, color); }
+            return;
+        }
 		if (*p0Y == *p1Y) // Flat top
 		{
 			if (p0X > p1X) { std::swap(p0X, p1X); std::swap(p0Y, p1Y); }
@@ -232,14 +247,22 @@ namespace gfx {
     void drawTriangles(const vector<objects::screenTri>& triangles) {
         for (const objects::screenTri& t : triangles)
         {
-            fillTriangle(FX_TO_F(t.p[0].x) * TFT_WIDTH + (TFT_WIDTH >> 1), FX_TO_F(t.p[0].y) * -TFT_HEIGHT + (TFT_HEIGHT >> 1), FX_TO_F(t.p[1].x) * TFT_WIDTH + (TFT_WIDTH >> 1), FX_TO_F(t.p[1].y) * -TFT_HEIGHT + (TFT_HEIGHT >> 1), FX_TO_F(t.p[2].x) * TFT_WIDTH + (TFT_WIDTH >> 1), FX_TO_F(t.p[2].y) * -TFT_HEIGHT + (TFT_HEIGHT >> 1), RGB565((unsigned short)(31 * FX_TO_F(t.brightness)), (unsigned short)(63 * FX_TO_F(t.brightness)), (unsigned short)(31 * FX_TO_F(t.brightness))));
+            unsigned short color = RGB565((unsigned short)(31 * FX_TO_F(t.brightness)), (unsigned short)(63 * FX_TO_F(t.brightness)), (unsigned short)(31 * FX_TO_F(t.brightness)));
+            tft.fillTriangle(FX_TO_F(t.p[0].x) * TFT_WIDTH + (TFT_WIDTH >> 1), FX_TO_F(t.p[0].y) * -TFT_HEIGHT + (TFT_HEIGHT >> 1), FX_TO_F(t.p[1].x) * TFT_WIDTH + (TFT_WIDTH >> 1), FX_TO_F(t.p[1].y) * -TFT_HEIGHT + (TFT_HEIGHT >> 1), FX_TO_F(t.p[2].x) * TFT_WIDTH + (TFT_WIDTH >> 1), FX_TO_F(t.p[2].y) * -TFT_HEIGHT + (TFT_HEIGHT >> 1), color);
+            fillTriangle(FX_TO_F(t.p[0].x) * TFT_WIDTH + (TFT_WIDTH >> 1), FX_TO_F(t.p[0].y) * -TFT_HEIGHT + (TFT_HEIGHT >> 1), FX_TO_F(t.p[1].x) * TFT_WIDTH + (TFT_WIDTH >> 1), FX_TO_F(t.p[1].y) * -TFT_HEIGHT + (TFT_HEIGHT >> 1), FX_TO_F(t.p[2].x) * TFT_WIDTH + (TFT_WIDTH >> 1), FX_TO_F(t.p[2].y) * -TFT_HEIGHT + (TFT_HEIGHT >> 1), color);
         }
     }
 
-    void drawFps() {
+    void drawAvgFps() {
         tft.setTextColor(TFT_WHITE,TFT_BLACK);
         tft.setTextDatum(TC_DATUM);
         tft.drawNumber(counter * 1000 / (millis() - startTime), 120, 305, 2);
+    }
+
+    void drawAvgMillis() {
+        tft.setTextColor(TFT_WHITE,TFT_BLACK);
+        tft.setTextDatum(TC_DATUM);
+        tft.drawNumber((millis() - startTime) / counter, 120, 305, 2);
     }
 
     void setActiveScreen(const unsigned int& enabledScreen, const unsigned int&  disabledScreen) {
@@ -297,9 +320,9 @@ namespace gfx {
         // Clear both displays
         /*digitalWrite(TFT_CS1, LOW);
         digitalWrite(TFT_CS2, LOW);
-        if(millis() < 1000) {
-            tft.fillScreen(TFT_RED);
-        }*/
+        //if(millis() < 1000) {
+            tft.fillScreen(TFT_BLACK);
+        //}*/
 
         memset(pixelsDrawn, 0x00, sizeof(pixelsDrawn));
 
@@ -308,7 +331,7 @@ namespace gfx {
         calculateTriangles(meshes, tris, lights, rightCamera);
         drawTriangles(tris);
         fillScreen(TFT_BLACK);
-        drawFps();
+        drawAvgMillis();
 
         memset(pixelsDrawn, 0x00, sizeof(pixelsDrawn));
         
@@ -317,6 +340,6 @@ namespace gfx {
         calculateTriangles(meshes, tris, lights, leftCamera);
         drawTriangles(tris);
         fillScreen(TFT_BLACK);
-        drawFps();
+        drawAvgMillis();
     }
 }
