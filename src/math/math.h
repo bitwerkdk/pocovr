@@ -31,6 +31,10 @@ namespace math {
     #pragma endregion
 
     #pragma region vector
+    struct vector2F;
+    struct vector3F;
+    struct vector4F;
+
     struct vector2F {
         fixed x = 0, y = 0;
 
@@ -48,6 +52,9 @@ namespace math {
         inline void operator *=(const fixed& second) { x = FX_MUL(x, second); y = FX_MUL(y, second); }
         inline vector2F operator /(const fixed& second) const { return vector2F(FX_DIV(x, second), FX_DIV(y, second)); }
         inline void operator /=(const fixed& second) { x = FX_DIV(x, second); y = FX_DIV(y, second); }
+
+        operator vector3F() const;
+        operator vector4F() const;
     };
 
     struct vector2I {
@@ -86,6 +93,9 @@ namespace math {
 
         static fixed dot(const vector3F& a, const vector3F& b);
         static vector3F cross(const vector3F& a, const vector3F& b);
+        
+        operator vector2F() const;
+        operator vector4F() const;
     };
 
     struct vector4F {
@@ -102,6 +112,9 @@ namespace math {
         inline void operator *=(const fixed& second) { x = FX_MUL(x, second); y = FX_MUL(y, second); z = FX_MUL(z, second); w = FX_MUL(w, second); }
         inline vector4F operator /(const fixed& second) const { return vector4F(FX_DIV(x, second), FX_DIV(y, second), FX_DIV(z, second), FX_DIV(w, second)); }
         inline void operator /=(const fixed& second) { x = FX_DIV(x, second); y = FX_DIV(y, second); z = FX_DIV(z, second); w = FX_DIV(w, second); }
+
+        operator vector2F() const;
+        operator vector3F() const;
     };
     #pragma endregion
 
@@ -130,4 +143,8 @@ namespace math {
         static mat4x4 inverseTransformation(const vector3F& pos, const vector3F& forward, const vector3F& up);
     };
     #pragma endregion
+
+    bool lineLineIntersectionPossible(const vector2F& a1, const vector2F& a2, const vector2F& b1, const vector2F& b2);
+
+    vector2F lineLineIntersection(const vector2F& a1, const vector2F& a2, const vector2F& b1, const vector2F& b2);
 }

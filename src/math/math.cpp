@@ -46,6 +46,9 @@ namespace math {
         return *this / magnitude();
     }
 
+    vector2F::operator vector3F() const { return vector3F(x, y, 0); }
+    vector2F::operator vector4F() const { return vector4F(x, y, 0, FX_FROM_I(1)); }
+
     fixed vector3F::magnitude() const {
         return fxSqrt(FX_ADD(FX_ADD(FX_MUL(x, x), FX_MUL(y, y)), FX_MUL(z, z)));
     }
@@ -58,6 +61,12 @@ namespace math {
     vector3F vector3F::cross(const vector3F& a, const vector3F& b) {
         return vector3F(FX_SUB(FX_MUL(a.y, b.z), FX_MUL(a.z, b.y)), FX_SUB(FX_MUL(a.z, b.x), FX_MUL(a.x, b.z)), FX_SUB(FX_MUL(a.x, b.y), FX_MUL(a.y, b.x)));
     }
+        
+    vector3F::operator vector2F() const { return vector2F(x, y); }
+    vector3F::operator vector4F() const { return vector4F(x, y, z, FX_FROM_I(1)); }
+
+    vector4F::operator vector2F() const { return vector2F(x, y); }
+    vector4F::operator vector3F() const { return vector3F(x, y, z); }
     #pragma endregion
 
     #pragma region matrix
@@ -139,4 +148,25 @@ namespace math {
                       -vector3F::dot(pos, right), -vector3F::dot(pos, up), -vector3F::dot(pos, forward), FX_FROM_I(1));
     }
     #pragma endregion
+
+    bool lineLineIntersectionPossible(const vector2F& a1, const vector2F& a2, const vector2F& b1, const vector2F& b2) {
+        return FX_MUL((a1.x - a2.x), (b1.y - b2.y)) - FX_MUL((a1.y - a2.y), (b1.x - b2.x)) != 0;
+    }
+
+    vector2F lineLineIntersection(const vector2F& a1, const vector2F& a2, const vector2F& b1, const vector2F& b2) {
+        fixed denominator = FX_MUL((a1.x - a2.x), (b1.y - b2.y)) - FX_MUL((a1.y - a2.y), (b1.x - b2.x));
+        
+        // Check if an intersection exists
+        if(denominator == 0) {
+            return vector2F();
+        }
+
+        // Calculate result
+        vector2F result;
+        result.x = FX_MUL(FX_MUL(a1.x, a2.y) - FX_MUL(a1.y, a2.x), b1.x - b2.x) - FX_MUL(FX_MUL(b1.x, b2.y) - FX_MUL(b1.y, b2.x), a1.x - a2.x);
+        result.x = FX_DIV(result.x, denominator);
+        result.y = FX_MUL(FX_MUL(a1.x, a2.y) - FX_MUL(a1.y, a2.x), b1.y - b2.y) - FX_MUL(FX_MUL(b1.x, b2.y) - FX_MUL(b1.y, b2.x), a1.y - a2.y);
+        result.y = FX_DIV(result.y, denominator);
+        return result;
+    }
 }

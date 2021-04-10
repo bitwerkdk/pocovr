@@ -6,50 +6,93 @@
 #include "../math/math.h"
 #include "../objects/camera.h"
 #include "../objects/mesh.h"
+#include "../objects/scene.h"
 #include "../objects/transform.h"
+#include "../physics/time.h"
 #include "../state/state.h"
 #include "../utils/utils.h"
 #include "../vector/vector.h"
 
-#define MAX_MESHES 5
+#define TFT_CS1 15
+#define TFT_CS2 5
+
 #define MAX_TRIS 1000
-#define MAX_LIGHTS 5
 
 namespace gfx {
     TFT_eSPI tft = TFT_eSPI();
 
-    const unsigned int TFT_CS1 = 15;
-    const unsigned int TFT_CS2 = 5;
-
     unsigned long startTime;
     unsigned long counter;
     
-    TFT_eSprite halfFrameBuffer(&tft);
+    TFT_eSprite frameBuffer(&tft);
 
-    vector<objects::mesh*> meshes;
-    vector<objects::screenTri> tris;
+    vector<objects::screenTri> screenTris;
 
-    objects::camera leftCamera(math::vector3F(FX_FROM_F(-0.0315), 0, 0));
-    objects::camera rightCamera(math::vector3F(FX_FROM_F(0.0315), 0, 0));
+    objects::transform headsetTransform;
+    math::fixed ipd = FX_FROM_F(0.063);
+    objects::camera leftCamera;
+    objects::camera rightCamera;
 
-    struct light
-    {
-        math::vector3F dir = math::vector3F(0, FX_FROM_F(-1), 0);
-        math::fixed intensity = 1;
+    int clipTriangle2D(const objects::tri& tri, const math::vector2F& point, const math::vector2F& normal, objects::tri& outTri1, objects::tri& outTri2) {
+        math::vector2F insidePoints[3];
+        math::vector2F outsidePoints[3];
+        int numInsidePoints = 0;
+        int numOutsidePoints = 0;
+        
+        // Calculate a second point on the clipping line
+        math::vector2F lineDir = math::vector3F::cross(normal, math::vector3F(0, 0, FX_FROM_I(1)));
+        math::vector2F secondPoint = point + lineDir;
 
-        light() { }
-        light(const math::vector3F& dir, const math::fixed& intensity) : dir(dir.normalized()), intensity(intensity) { }
-    };
-    
-    vector<light> lights;
+        // Check if the vertices are inside or outside points
+        for(math::vector3F vert : tri.p) {
+            if(math::vector3F::dot(vert - point, normal) >= 0) {
+                insidePoints[numInsidePoints] = vert;
+                numInsidePoints++;
+            }
+            else {
+                outsidePoints[numOutsidePoints] = vert;
+                numOutsidePoints++;
+            }
+        }
 
-    void calculateTriangles(const vector<objects::mesh*>& meshes, vector<objects::screenTri>& outTris, const vector<light>& lights, const objects::camera camera) {
+        // Clip the triangle
+        switch (numInsidePoints)
+        {
+        case 0: // Completely outside
+            return 0;
+            break;
+        case 3: // Completely inside
+            outTri1 = tri;
+            return 1;
+            break;
+        case 1: // Make smaller triangle
+            outTri1.p[0] = insidePoints[0];
+            outTri1.p[1] = math::lineLineIntersection(point, secondPoint, insidePoints[0], outsidePoints[0]);
+            outTri1.p[2] = math::lineLineIntersection(point, secondPoint, insidePoints[0], outsidePoints[1]);
+            return 1;
+            break;
+        case 2: // Make quad
+            outTri1.p[0] = insidePoints[0];
+            outTri1.p[1] = insidePoints[1];
+            outTri1.p[2] = math::lineLineIntersection(point, secondPoint, insidePoints[0], outsidePoints[0]);
+            outTri2.p[0] = insidePoints[1];
+            outTri2.p[1] = math::lineLineIntersection(point, secondPoint, insidePoints[1], outsidePoints[0]);
+            outTri2.p[2] = outTri1.p[2];
+            return 2;
+            break;
+        }
+
+        // Should never reach this point
+        return 0;
+    }
+
+    void calculateTriangles(const objects::scene& scene, vector<objects::screenTri>& outTris, const objects::camera camera) {
         // Clear triangle vector
         outTris.clear();
 
         // Make view matrix from camera transform
         math::mat4x4 viewMat = math::mat4x4::inverseTransformation(camera.objTransform.pos, camera.objTransform.getForward(), camera.objTransform.getUp());
-        for (const objects::mesh* mesh : meshes)
+        for (const objects::mesh* mesh : scene.meshes)
         {
             // Make transformation matrix from mesh transform
             math::mat4x4 transformMat = math::mat4x4::transformation(mesh->objTransform.pos, mesh->objTransform.getForward(), mesh->objTransform.getUp());
@@ -77,10 +120,11 @@ namespace gfx {
 
                 // Lighting
                 math::fixed brightness = 0;
-                for (light l : lights)
+                for (objects::light l : scene.lights)
                 {
-                    brightness = math::fxLerp(brightness, FX_FROM_I(1), FX_MUL(FX_SUB(math::vector3F::dot(l.dir, normal), FX_FROM_I(1)) >> 1, l.intensity));
+                    brightness = math::fxLerp(brightness, FX_FROM_I(1), FX_MUL(FX_ADD(math::vector3F::dot(l.dir, normal), FX_FROM_I(1)) >> 1, l.intensity));
                 }
+                unsigned short color = RGB565((unsigned short)(31 * FX_TO_F(brightness)), (unsigned short)(63 * FX_TO_F(brightness)), (unsigned short)(31 * FX_TO_F(brightness)));
 
                 // Move vertices into view space
                 p0 = viewMat * p0;
@@ -95,39 +139,73 @@ namespace gfx {
                 p2 = camera.projMat * p2;
                 p2 /= p2.w != 0 ? p2.w : 1;
 
-                // Add projected triangle to triangle vector
-                outTris.push_back(objects::screenTri(math::vector2F(p0.x, p0.y), math::vector2F(p1.x, p1.y), math::vector2F(p2.x, p2.y), brightness));
+                // Edge clipping
+                math::vector2F edges[4] = { math::vector2F(0, FX_FROM_I(1)), math::vector2F(FX_FROM_I(1), 0), math::vector2F(0, FX_FROM_I(-1)), math::vector2F(FX_FROM_I(-1), 0) };
+                // Make finalClippedTris
+                objects::tri finalClippedTris[1 << 4];
+                int numFinalClippedTris = 0;
+                finalClippedTris[numFinalClippedTris++] = objects::tri(p0, p1, p2);
+                // Make tempClippedTris
+                objects::tri tempClippedTris[1 << 4];
+                int numTempClippedTris = 0;
+                for (math::vector2F edge : edges) {
+                    for (int i = 0; i < numFinalClippedTris; i++) {
+                        objects::tri outTri1, outTri2;
+                        char numOutTris = clipTriangle2D(finalClippedTris[i], edge, math::vector2F(-edge.x, -edge.y), outTri1, outTri2);
+                        switch (numOutTris) {
+                        case 1:
+                            tempClippedTris[numTempClippedTris++] = outTri1;
+                            break;
+                        case 2:
+                            tempClippedTris[numTempClippedTris++] = outTri1;
+                            tempClippedTris[numTempClippedTris++] = outTri2;
+                            break;
+                        }
+                    }
+
+                    // Set finalClippedTris to tempClippedTris
+                    numFinalClippedTris = numTempClippedTris;
+                    for(int i = 0; i < numTempClippedTris; i++) {
+                        finalClippedTris[i] = tempClippedTris[i];
+                    }
+                    numTempClippedTris = 0;
+                }
+
+                // Add projected and clipped triangle to triangle vector
+                for (int i = 0; i < numFinalClippedTris; i++) {
+                    outTris.push_back(objects::screenTri(finalClippedTris[i].p[0], finalClippedTris[i].p[1], finalClippedTris[i].p[2], color));
+                }
             }
         }
     }
 
     void drawTriangles(const vector<objects::screenTri>& triangles) {
-        halfFrameBuffer.fillSprite(0x0000);
+        frameBuffer.fillSprite(0x0000);
         for (const objects::screenTri& t : triangles)
         {
-            unsigned short color = RGB565((unsigned short)(31 * FX_TO_F(t.brightness)), (unsigned short)(63 * FX_TO_F(t.brightness)), (unsigned short)(31 * FX_TO_F(t.brightness)));
-            halfFrameBuffer.fillTriangle(FX_TO_F(t.p[0].x) * TFT_WIDTH + (TFT_WIDTH >> 1), FX_TO_F(t.p[0].y) * -TFT_HEIGHT + (TFT_HEIGHT >> 1), FX_TO_F(t.p[1].x) * TFT_WIDTH + (TFT_WIDTH >> 1), FX_TO_F(t.p[1].y) * -TFT_HEIGHT + (TFT_HEIGHT >> 1), FX_TO_F(t.p[2].x) * TFT_WIDTH + (TFT_WIDTH >> 1), FX_TO_F(t.p[2].y) * -TFT_HEIGHT + (TFT_HEIGHT >> 1), color);
+            frameBuffer.fillTriangle(FX_TO_F(t.p[0].x) * (TFT_WIDTH >> 1) + (TFT_WIDTH >> 1), FX_TO_F(t.p[0].y) * (-TFT_HEIGHT >> 1) + (TFT_HEIGHT >> 1), FX_TO_F(t.p[1].x) * (TFT_WIDTH >> 1) + (TFT_WIDTH >> 1), FX_TO_F(t.p[1].y) * (-TFT_HEIGHT >> 1) + (TFT_HEIGHT >> 1), FX_TO_F(t.p[2].x) * (TFT_WIDTH >> 1) + (TFT_WIDTH >> 1), FX_TO_F(t.p[2].y) * (-TFT_HEIGHT >> 1) + (TFT_HEIGHT >> 1), t.color);
+            //frameBuffer.drawTriangle(FX_TO_F(t.p[0].x) * (TFT_WIDTH >> 1) + (TFT_WIDTH >> 1), FX_TO_F(t.p[0].y) * (-TFT_HEIGHT >> 1) + (TFT_HEIGHT >> 1), FX_TO_F(t.p[1].x) * (TFT_WIDTH >> 1) + (TFT_WIDTH >> 1), FX_TO_F(t.p[1].y) * (-TFT_HEIGHT >> 1) + (TFT_HEIGHT >> 1), FX_TO_F(t.p[2].x) * (TFT_WIDTH >> 1) + (TFT_WIDTH >> 1), FX_TO_F(t.p[2].y) * (-TFT_HEIGHT >> 1) + (TFT_HEIGHT >> 1), TFT_RED);
         }
-        halfFrameBuffer.pushSprite(0, 0);
-        halfFrameBuffer.fillSprite(0x0000);
+        frameBuffer.pushSprite(0, 0);
+        frameBuffer.fillSprite(0x0000);
         for (const objects::screenTri& t : triangles)
         {
-            unsigned short color = RGB565((unsigned short)(31 * FX_TO_F(t.brightness)), (unsigned short)(63 * FX_TO_F(t.brightness)), (unsigned short)(31 * FX_TO_F(t.brightness)));
-            halfFrameBuffer.fillTriangle(FX_TO_F(t.p[0].x) * TFT_WIDTH + (TFT_WIDTH >> 1), FX_TO_F(t.p[0].y) * -TFT_HEIGHT, FX_TO_F(t.p[1].x) * TFT_WIDTH + (TFT_WIDTH >> 1), FX_TO_F(t.p[1].y) * -TFT_HEIGHT, FX_TO_F(t.p[2].x) * TFT_WIDTH + (TFT_WIDTH >> 1), FX_TO_F(t.p[2].y) * -TFT_HEIGHT, color);
+            frameBuffer.fillTriangle(FX_TO_F(t.p[0].x) * (TFT_WIDTH >> 1) + (TFT_WIDTH >> 1), FX_TO_F(t.p[0].y) * (-TFT_HEIGHT >> 1), FX_TO_F(t.p[1].x) * (TFT_WIDTH >> 1) + (TFT_WIDTH >> 1), FX_TO_F(t.p[1].y) * (-TFT_HEIGHT >> 1), FX_TO_F(t.p[2].x) * (TFT_WIDTH >> 1) + (TFT_WIDTH >> 1), FX_TO_F(t.p[2].y) * (-TFT_HEIGHT >> 1), t.color);
+            //frameBuffer.drawTriangle(FX_TO_F(t.p[0].x) * (TFT_WIDTH >> 1) + (TFT_WIDTH >> 1), FX_TO_F(t.p[0].y) * (-TFT_HEIGHT >> 1), FX_TO_F(t.p[1].x) * (TFT_WIDTH >> 1) + (TFT_WIDTH >> 1), FX_TO_F(t.p[1].y) * (-TFT_HEIGHT >> 1), FX_TO_F(t.p[2].x) * (TFT_WIDTH >> 1) + (TFT_WIDTH >> 1), FX_TO_F(t.p[2].y) * (-TFT_HEIGHT >> 1), TFT_RED);
         }
-        halfFrameBuffer.pushSprite(0, TFT_HEIGHT >> 1);
+        frameBuffer.pushSprite(0, TFT_HEIGHT >> 1);
     }
 
-    void drawAvgFps() {
+    void drawFps() {
         tft.setTextColor(TFT_WHITE,TFT_BLACK);
         tft.setTextDatum(TC_DATUM);
-        tft.drawNumber(counter * 1000 / (millis() - startTime), 120, 305, 2);
+        tft.drawNumber(1000 / FX_TO_F(physics::deltaTime), 120, 305, 2);
     }
 
-    void drawAvgMillis() {
+    void drawMillis() {
         tft.setTextColor(TFT_WHITE,TFT_BLACK);
         tft.setTextDatum(TC_DATUM);
-        tft.drawNumber((millis() - startTime) / counter, 120, 305, 2);
+        tft.drawNumber(FX_TO_F(physics::deltaTime), 120, 305, 2);
     }
 
     void setActiveScreen(const unsigned int& enabledScreen, const unsigned int&  disabledScreen) {
@@ -135,13 +213,12 @@ namespace gfx {
         digitalWrite(disabledScreen, HIGH);
     }
 
-    void setup() {
+    void initialize() {
+        // Pin setup
         pinMode(TFT_CS1, OUTPUT);
         pinMode(TFT_CS2, OUTPUT);
         digitalWrite(TFT_CS1, LOW);
         digitalWrite(TFT_CS2, LOW);
-
-        Serial.begin(115200);
 
         // Setup the LCD
         tft.init();
@@ -153,63 +230,36 @@ namespace gfx {
         digitalWrite(TFT_CS2, HIGH);
 
         //Initialize frame buffer
-        halfFrameBuffer.createSprite(TFT_WIDTH, TFT_HEIGHT >> 1);
-
-        startTime = millis();
-
-        // Set meshes
-        meshes = utils::makeVector<objects::mesh*>(MAX_MESHES);
-
-        // Make pyramid
-        objects::mesh* pyramid = new objects::mesh(math::vector3F(0, 0, FX_FROM_F(3)));
-        pyramid->tris.push_back(objects::tri(math::vector3F(FX_FROM_F(-1), FX_FROM_F(-1), FX_FROM_F(-1)), math::vector3F(FX_FROM_F(1), FX_FROM_F(-1), FX_FROM_F(1)), math::vector3F(FX_FROM_F(-1), FX_FROM_F(-1), FX_FROM_F(1))));
-        pyramid->tris.push_back(objects::tri(math::vector3F(FX_FROM_F(-1), FX_FROM_F(-1), FX_FROM_F(-1)), math::vector3F(FX_FROM_F(1), FX_FROM_F(-1), FX_FROM_F(-1)), math::vector3F(FX_FROM_F(1), FX_FROM_F(-1), FX_FROM_F(1))));
-        pyramid->tris.push_back(objects::tri(math::vector3F(FX_FROM_F(1), FX_FROM_F(-1), FX_FROM_F(1)), math::vector3F(FX_FROM_F(0), FX_FROM_F(1), FX_FROM_F(0)), math::vector3F(FX_FROM_F(-1), FX_FROM_F(-1), FX_FROM_F(1))));
-        pyramid->tris.push_back(objects::tri(math::vector3F(FX_FROM_F(1), FX_FROM_F(-1), FX_FROM_F(-1)), math::vector3F(FX_FROM_F(0), FX_FROM_F(1), FX_FROM_F(0)), math::vector3F(FX_FROM_F(1), FX_FROM_F(-1), FX_FROM_F(1))));
-        pyramid->tris.push_back(objects::tri(math::vector3F(FX_FROM_F(-1), FX_FROM_F(-1), FX_FROM_F(-1)), math::vector3F(FX_FROM_F(0), FX_FROM_F(1), FX_FROM_F(0)), math::vector3F(FX_FROM_F(1), FX_FROM_F(-1), FX_FROM_F(-1))));
-        pyramid->tris.push_back(objects::tri(math::vector3F(FX_FROM_F(-1), FX_FROM_F(-1), FX_FROM_F(1)), math::vector3F(FX_FROM_F(0), FX_FROM_F(1), FX_FROM_F(0)), math::vector3F(FX_FROM_F(-1), FX_FROM_F(-1), FX_FROM_F(-1))));
-        meshes.push_back(pyramid);
+        frameBuffer.createSprite(TFT_WIDTH, TFT_HEIGHT >> 1);
         
         // Set tris
-        tris = utils::makeVector<objects::screenTri>(MAX_TRIS);
-
-        // Set lights
-        lights = utils::makeVector<light>(MAX_LIGHTS);
-        lights.push_back(light(math::vector3F(FX_FROM_F(2), FX_FROM_F(1), FX_FROM_F(-1)), FX_FROM_F(1)));
-        lights.push_back(light(math::vector3F(FX_FROM_F(-2), FX_FROM_F(1), FX_FROM_F(-1)), FX_FROM_F(0.5)));
-
-        Serial.println((int)halfFrameBuffer.getPointer() - (int)&halfFrameBuffer);
+        screenTris = utils::makeVector<objects::screenTri>(MAX_TRIS);
     }
 
-    void loop() {
-        meshes[0]->objTransform.rotateY(FX_FROM_F(4));
-        
-        randomSeed(millis());
+    void renderScene(const objects::scene& scene) {
         counter++;
 
-        // Clear both displays
-        /*digitalWrite(TFT_CS1, LOW);
-        digitalWrite(TFT_CS2, LOW);
-        //if(millis() < 1000) {
-            tft.fillScreen(TFT_BLACK);
-        //}*/
-
-        //halfFrameBuffer.fillSprite(0x0000);
-
-        //memset(pixelsDrawn, 0x00, sizeof(pixelsDrawn));
+        // Calculate camera transforms
+        leftCamera.objTransform = objects::transform(math::vector3F(-ipd >> 1, 0, 0), headsetTransform.getForward(), headsetTransform.getUp());
+        rightCamera.objTransform = objects::transform(math::vector3F(ipd >> 1, 0, 0), headsetTransform.getForward(), headsetTransform.getUp());
+        math::mat4x4 headsetMatrix = math::mat4x4::transformation(headsetTransform.pos, headsetTransform.getForward(), headsetTransform.getUp());
+        math::vector4F leftCamPosV4 = math::vector4F(leftCamera.objTransform.pos.x, leftCamera.objTransform.pos.y, leftCamera.objTransform.pos.z, FX_FROM_I(1));
+        math::vector4F rightCamPosV4 = math::vector4F(rightCamera.objTransform.pos.x, rightCamera.objTransform.pos.y, rightCamera.objTransform.pos.z,  FX_FROM_I(1));
+        leftCamPosV4 = headsetMatrix * leftCamPosV4;
+        rightCamPosV4 = headsetMatrix * rightCamPosV4;
+        leftCamera.objTransform.pos = math::vector3F(leftCamPosV4.x, leftCamPosV4.y, leftCamPosV4.z);
+        rightCamera.objTransform.pos = math::vector3F(rightCamPosV4.x, rightCamPosV4.y, rightCamPosV4.z);
 
         // Write to display 1
         setActiveScreen(TFT_CS1, TFT_CS2);
-        calculateTriangles(meshes, tris, lights, rightCamera);
-        drawTriangles(tris);
-        drawAvgMillis();
-
-        //memset(pixelsDrawn, 0x00, sizeof(pixelsDrawn));
+        calculateTriangles(scene, screenTris, rightCamera);
+        drawTriangles(screenTris);
+        drawMillis();
         
         // Write to display 2
         setActiveScreen(TFT_CS2, TFT_CS1);
-        calculateTriangles(meshes, tris, lights, leftCamera);
-        drawTriangles(tris);
-        drawAvgMillis();
+        calculateTriangles(scene, screenTris, leftCamera);
+        drawTriangles(screenTris);
+        drawMillis();
     }
 }

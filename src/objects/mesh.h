@@ -10,15 +10,16 @@ namespace objects {
     {
         math::vector3F p[3];
 
+        tri() { }
         tri(const math::vector3F& p0, const math::vector3F& p1, const math::vector3F& p2) : p({ p0, p1, p2 }) { }
     };
     
     struct screenTri
     {
         math::vector2F p[3];
-        math::fixed brightness;
+        unsigned short color;
 
-        screenTri(const math::vector2F& p0, const math::vector2F& p1, const math::vector2F& p2, const math::fixed& brightness) : p({ p0, p1, p2 }), brightness(brightness) { }
+        screenTri(const math::vector2F& p0, const math::vector2F& p1, const math::vector2F& p2, const unsigned short& color) : p({ p0, p1, p2 }), color(color) { }
     };
 
     struct mesh
