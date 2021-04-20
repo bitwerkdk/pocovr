@@ -7,6 +7,7 @@
 
 objects::scene mainScene(5, 40);
 
+/// Fill mainScene with objects and lights
 void createScene() {
   // Make lights
   mainScene.lights.push_back(objects::light(math::vector3F(FX_FROM_F(2), FX_FROM_F(1), FX_FROM_F(-1)), FX_FROM_F(1)));
@@ -35,7 +36,7 @@ void createScene() {
   mainScene.meshes.push_back(room);*/
 
   // Make pyramid
-  objects::mesh* pyramid = new objects::mesh(math::vector3F(FX_FROM_F(1), FX_FROM_F(2.5), FX_FROM_F(3)));
+  objects::mesh* pyramid = new objects::mesh(math::vector3F(FX_FROM_F(0), FX_FROM_F(0), FX_FROM_F(3)));
   pyramid->tris.push_back(objects::tri(math::vector3F(FX_FROM_F(-1), FX_FROM_F(-1), FX_FROM_F(-1)), math::vector3F(FX_FROM_F(1), FX_FROM_F(-1), FX_FROM_F(1)), math::vector3F(FX_FROM_F(-1), FX_FROM_F(-1), FX_FROM_F(1))));
   pyramid->tris.push_back(objects::tri(math::vector3F(FX_FROM_F(-1), FX_FROM_F(-1), FX_FROM_F(-1)), math::vector3F(FX_FROM_F(1), FX_FROM_F(-1), FX_FROM_F(-1)), math::vector3F(FX_FROM_F(1), FX_FROM_F(-1), FX_FROM_F(1))));
   pyramid->tris.push_back(objects::tri(math::vector3F(FX_FROM_F(1), FX_FROM_F(-1), FX_FROM_F(1)), math::vector3F(FX_FROM_F(0), FX_FROM_F(1), FX_FROM_F(0)), math::vector3F(FX_FROM_F(-1), FX_FROM_F(-1), FX_FROM_F(1))));
@@ -52,13 +53,22 @@ void setup() {
 
   //state::setup();
   gfx::initialize();
+
+  // Potentiometers
+  pinMode(26, INPUT);
+  pinMode(27, INPUT);
 }
 
 void loop() {
   mainScene.meshes[0]->objTransform.rotateY(FX_MUL(FX_FROM_F(90), physics::deltaTimeSec));
-  //gfx::headsetTransform.pos.z -= physics::deltaTimeSec;
 
   gfx::renderScene(mainScene);
   
   physics::updateTime();
+
+  // Potentiometer rotation
+  gfx::headsetTransform.setForward(math::vector3F(0, 0, FX_FROM_I(1)));
+  gfx::headsetTransform.setUp(math::vector3F(0, FX_FROM_I(1), 0));
+  gfx::headsetTransform.rotateY(FX_MUL((analogRead(26) - 2048) * 90, physics::deltaTimeSec));
+  gfx::headsetTransform.rotateX(FX_MUL(-(analogRead(27) - 2048) * 90, physics::deltaTimeSec));
 }

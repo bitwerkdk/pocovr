@@ -5,8 +5,6 @@
 template <typename T>
 class vector;
 
-namespace objects { struct tri; struct mesh; }
-
 namespace utils {
     template <typename T>
     vector<T> makeVector(const unsigned int& maxSize) {
