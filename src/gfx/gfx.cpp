@@ -24,9 +24,12 @@ namespace gfx {
     unsigned long startTime;
     unsigned long counter;
     
+    unsigned int bufferDivisions = 1; // How many times the frame buffer is halved
     TFT_eSprite frameBuffer(&tft);
 
     vector<objects::screenTri> screenTris;
+
+    math::fixed screenOffset = 0;
 
     objects::transform headsetTransform;
     math::fixed ipd = FX_FROM_F(0.063);
@@ -179,21 +182,41 @@ namespace gfx {
         }
     }
 
-    void drawTriangles(const vector<objects::screenTri>& triangles) {
-        frameBuffer.fillSprite(0x0000);
-        for (const objects::screenTri& t : triangles)
+    void setActiveScreen(const unsigned int& enabledScreen, const unsigned int&  disabledScreen) {
+        digitalWrite(enabledScreen, LOW);
+        digitalWrite(disabledScreen, HIGH);
+    }
+
+    void drawTriangles(const vector<objects::screenTri>& triangles, const bool& rightEye) {
+        setActiveScreen(rightEye ? TFT_CS1 : TFT_CS2, rightEye ? TFT_CS2 : TFT_CS1);
+        for (int i = 0; i < 1 << bufferDivisions; i++)
         {
-            frameBuffer.fillTriangle(FX_TO_F(t.p[0].x) * (TFT_WIDTH >> 1) + (TFT_WIDTH >> 1), FX_TO_F(t.p[0].y) * (-TFT_HEIGHT >> 1) + (TFT_HEIGHT >> 1), FX_TO_F(t.p[1].x) * (TFT_WIDTH >> 1) + (TFT_WIDTH >> 1), FX_TO_F(t.p[1].y) * (-TFT_HEIGHT >> 1) + (TFT_HEIGHT >> 1), FX_TO_F(t.p[2].x) * (TFT_WIDTH >> 1) + (TFT_WIDTH >> 1), FX_TO_F(t.p[2].y) * (-TFT_HEIGHT >> 1) + (TFT_HEIGHT >> 1), t.color);
-            //frameBuffer.drawTriangle(FX_TO_F(t.p[0].x) * (TFT_WIDTH >> 1) + (TFT_WIDTH >> 1), FX_TO_F(t.p[0].y) * (-TFT_HEIGHT >> 1) + (TFT_HEIGHT >> 1), FX_TO_F(t.p[1].x) * (TFT_WIDTH >> 1) + (TFT_WIDTH >> 1), FX_TO_F(t.p[1].y) * (-TFT_HEIGHT >> 1) + (TFT_HEIGHT >> 1), FX_TO_F(t.p[2].x) * (TFT_WIDTH >> 1) + (TFT_WIDTH >> 1), FX_TO_F(t.p[2].y) * (-TFT_HEIGHT >> 1) + (TFT_HEIGHT >> 1), TFT_RED);
+            // Clear buffer
+            frameBuffer.fillSprite(0x0000);
+
+            // Calculate offsets
+            math::fixed xOffset = rightEye ? screenOffset : -screenOffset;
+            math::fixed yOffset = i * (TFT_HEIGHT >> bufferDivisions);
+
+            // Draw triangles to buffer
+            for (const objects::screenTri& t : triangles)
+            {
+                // Convert vertices to pixel space
+                math::vector2I a = math::vector2I(FX_TO_F(t.p[0].x) * (TFT_WIDTH >> 1) + (TFT_WIDTH >> 1) + xOffset, // a.x
+                                                FX_TO_F(t.p[0].y) * (-TFT_HEIGHT >> 1) + (TFT_HEIGHT >> 1) - yOffset); // a.y
+                math::vector2I b = math::vector2I(FX_TO_F(t.p[1].x) * (TFT_WIDTH >> 1) + (TFT_WIDTH >> 1) + xOffset, // b.x
+                                                FX_TO_F(t.p[1].y) * (-TFT_HEIGHT >> 1) + (TFT_HEIGHT >> 1) - yOffset); // b.y
+                math::vector2I c = math::vector2I(FX_TO_F(t.p[2].x) * (TFT_WIDTH >> 1) + (TFT_WIDTH >> 1) + xOffset, // c.x
+                                                FX_TO_F(t.p[2].y) * (-TFT_HEIGHT >> 1) + (TFT_HEIGHT >> 1) - yOffset); // c.y
+
+                // Draw triangle
+                frameBuffer.fillTriangle(a.x, a.y, b.x, b.y, c.x, c.y, t.color); // Solid
+                //frameBuffer.drawTriangle(a.x, a.y, b.x, b.y, c.x, c.y, TFT_RED); // Wireframe
+            }
+
+            // Draw buffer to screen
+            frameBuffer.pushSprite(0, yOffset);
         }
-        frameBuffer.pushSprite(0, 0);
-        frameBuffer.fillSprite(0x0000);
-        for (const objects::screenTri& t : triangles)
-        {
-            frameBuffer.fillTriangle(FX_TO_F(t.p[0].x) * (TFT_WIDTH >> 1) + (TFT_WIDTH >> 1), FX_TO_F(t.p[0].y) * (-TFT_HEIGHT >> 1), FX_TO_F(t.p[1].x) * (TFT_WIDTH >> 1) + (TFT_WIDTH >> 1), FX_TO_F(t.p[1].y) * (-TFT_HEIGHT >> 1), FX_TO_F(t.p[2].x) * (TFT_WIDTH >> 1) + (TFT_WIDTH >> 1), FX_TO_F(t.p[2].y) * (-TFT_HEIGHT >> 1), t.color);
-            //frameBuffer.drawTriangle(FX_TO_F(t.p[0].x) * (TFT_WIDTH >> 1) + (TFT_WIDTH >> 1), FX_TO_F(t.p[0].y) * (-TFT_HEIGHT >> 1), FX_TO_F(t.p[1].x) * (TFT_WIDTH >> 1) + (TFT_WIDTH >> 1), FX_TO_F(t.p[1].y) * (-TFT_HEIGHT >> 1), FX_TO_F(t.p[2].x) * (TFT_WIDTH >> 1) + (TFT_WIDTH >> 1), FX_TO_F(t.p[2].y) * (-TFT_HEIGHT >> 1), TFT_RED);
-        }
-        frameBuffer.pushSprite(0, TFT_HEIGHT >> 1);
     }
 
     void drawFps() {
@@ -206,11 +229,6 @@ namespace gfx {
         tft.setTextColor(TFT_WHITE,TFT_BLACK);
         tft.setTextDatum(TC_DATUM);
         tft.drawNumber(FX_TO_F(physics::deltaTime), 120, 305, 2);
-    }
-
-    void setActiveScreen(const unsigned int& enabledScreen, const unsigned int&  disabledScreen) {
-        digitalWrite(enabledScreen, LOW);
-        digitalWrite(disabledScreen, HIGH);
     }
 
     void initialize() {
@@ -230,7 +248,7 @@ namespace gfx {
         digitalWrite(TFT_CS2, HIGH);
 
         //Initialize frame buffer
-        frameBuffer.createSprite(TFT_WIDTH, TFT_HEIGHT >> 1);
+        frameBuffer.createSprite(TFT_WIDTH, TFT_HEIGHT >> bufferDivisions);
         
         // Set tris
         screenTris = utils::makeVector<objects::screenTri>(MAX_TRIS);
@@ -251,15 +269,13 @@ namespace gfx {
         rightCamera.objTransform.pos = math::vector3F(rightCamPosV4.x, rightCamPosV4.y, rightCamPosV4.z);
 
         // Write to display 1
-        setActiveScreen(TFT_CS1, TFT_CS2);
         calculateTriangles(scene, screenTris, rightCamera);
-        drawTriangles(screenTris);
+        drawTriangles(screenTris, true);
         drawMillis();
         
         // Write to display 2
-        setActiveScreen(TFT_CS2, TFT_CS1);
         calculateTriangles(scene, screenTris, leftCamera);
-        drawTriangles(screenTris);
+        drawTriangles(screenTris, false);
         drawMillis();
     }
 }

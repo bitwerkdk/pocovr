@@ -6,6 +6,8 @@ namespace objects { struct scene; struct transform; struct camera; }
 namespace math { typedef long fixed; }
 
 namespace gfx {
+    extern math::fixed screenOffset;
+
     extern objects::transform headsetTransform;
     extern math::fixed ipd;
     extern objects::camera leftCamera;

@@ -66,9 +66,7 @@ void loop() {
   
   physics::updateTime();
 
-  // Potentiometer rotation
-  gfx::headsetTransform.setForward(math::vector3F(0, 0, FX_FROM_I(1)));
-  gfx::headsetTransform.setUp(math::vector3F(0, FX_FROM_I(1), 0));
-  gfx::headsetTransform.rotateY(FX_MUL((analogRead(26) - 2048) * 90, physics::deltaTimeSec));
-  gfx::headsetTransform.rotateX(FX_MUL(-(analogRead(27) - 2048) * 90, physics::deltaTimeSec));
+  // Potentiometers
+  gfx::screenOffset = math::fxLerp(-16, 16, FX_FROM_I(analogRead(26)) / 4096);
+  gfx::headsetTransform.pos.z = math::fxLerp(FX_FROM_F(-1), FX_FROM_F(1), FX_FROM_I(analogRead(27)) / 4096);
 }
