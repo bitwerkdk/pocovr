@@ -149,6 +149,48 @@ namespace math {
     }
     #pragma endregion
 
+    #pragma region quaternions
+    void quaternion::normalize() {
+        float magnitude = sqrt(w*w + x*x + y*y + z*z);
+        float multiplier = 1 / magnitude;
+        w *= multiplier;
+        x *= multiplier;
+        y *= multiplier;
+        z *= multiplier;
+    }
+    
+    quaternion::quaternion(const float& angle, vector3F axis) {
+        w = cos(angle * DEG_TO_RAD / 2);
+
+        axis = axis.normalized();
+        float vMultiplier = sin(angle * DEG_TO_RAD / 2);
+        x = FX_TO_F(axis.x) * vMultiplier;
+        y = FX_TO_F(axis.y) * vMultiplier;
+        z = FX_TO_F(axis.z) * vMultiplier;
+    }
+
+    vector3F quaternion::rotateVector(const vector3F& vector) const {
+        quaternion vectorQ(0, FX_TO_F(vector.x), FX_TO_F(vector.y), FX_TO_F(vector.z));
+        vectorQ = *this * vectorQ * this->inverse();
+        return vectorQ.xyz();
+    }
+    
+    quaternion quaternion::operator *(const quaternion& second) const {
+        vector3F vFirst(FX_FROM_F(x), FX_FROM_F(y), FX_FROM_F(z)), vSecond(FX_FROM_F(second.x), FX_FROM_F(second.y), FX_FROM_F(second.z));
+        quaternion result;
+
+        result.w = second.w * w - FX_TO_F(vector3F::dot(vSecond, vFirst));
+
+        vector3F vResult = vFirst * FX_FROM_F(second.w) + vSecond * FX_FROM_F(w) + vector3F::cross(vFirst, vSecond);
+        result.x = FX_TO_F(vResult.x);
+        result.y = FX_TO_F(vResult.y);
+        result.z = FX_TO_F(vResult.z);
+
+        result.normalize();
+        return result;
+    }
+    #pragma endregion
+
     bool lineLineIntersectionPossible(const vector2F& a1, const vector2F& a2, const vector2F& b1, const vector2F& b2) {
         return FX_MUL((a1.x - a2.x), (b1.y - b2.y)) - FX_MUL((a1.y - a2.y), (b1.x - b2.x)) != 0;
     }

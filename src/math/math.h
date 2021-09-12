@@ -82,6 +82,10 @@ namespace math {
         inline vector3F() { }
         inline vector3F(const fixed& x, const fixed& y, const fixed& z) : x(x), y(y), z(z) { }
 
+        static vector3F forward() { return vector3F(0, 0, FX_FROM_F(1)); }
+        static vector3F up() { return vector3F(0, FX_FROM_F(1), 0); }
+        static vector3F right() { return vector3F(FX_FROM_F(1), 0, 0); }
+
         inline vector3F operator +(const vector3F& second) const { return vector3F(FX_ADD(x, second.x), FX_ADD(y, second.y), FX_ADD(z, second.z)); }
         inline void operator +=(const vector3F& second) { x = FX_ADD(x, second.x); y = FX_ADD(y, second.y); z = FX_ADD(z, second.z); }
         inline vector3F operator -(const vector3F& second) const { return vector3F(FX_SUB(x, second.x), FX_SUB(y, second.y), FX_SUB(z, second.z)); }
@@ -119,15 +123,10 @@ namespace math {
     #pragma endregion
 
     #pragma region matrix
-    struct mat4x4{
+    struct mat4x4 {
         fixed m[4][4] = { { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } };
 
         mat4x4() { }
-        /*mat4x4(const fixed& p00, const fixed& p10, const fixed& p20, const fixed& p30,
-               const fixed& p01, const fixed& p11, const fixed& p21, const fixed& p31,
-               const fixed& p02, const fixed& p12, const fixed& p22, const fixed& p32,
-               const fixed& p03, const fixed& p13, const fixed& p23, const fixed& p33)
-               : m({ { p00, p10, p20, p30 }, { p01, p11, p21, p31 }, { p02, p12, p22, p32 }, { p03, p13, p23, p33 } }) { }*/
         mat4x4(const fixed& p00, const fixed& p10, const fixed& p20, const fixed& p30,
                const fixed& p01, const fixed& p11, const fixed& p21, const fixed& p31,
                const fixed& p02, const fixed& p12, const fixed& p22, const fixed& p32,
@@ -141,6 +140,25 @@ namespace math {
         static mat4x4 projection(const fixed& fov, const fixed& nearPlane, const fixed& farPlane, const fixed& width, const fixed& height);
         static mat4x4 transformation(const vector3F& pos, const vector3F& forward, const vector3F& up);
         static mat4x4 inverseTransformation(const vector3F& pos, const vector3F& forward, const vector3F& up);
+    };
+    #pragma endregion
+
+    #pragma region quaternions
+    struct quaternion {
+        float w = 1, x = 0, y = 0, z = 0;
+
+        void normalize();
+
+        inline quaternion() { }
+        inline quaternion(const float& w, const float& x,  const float& y,  const float& z) : w(w), x(x), y(y), z(z) { }
+        quaternion(const float& angle, vector3F axis);
+
+        vector3F rotateVector(const vector3F& vector) const;
+        inline quaternion inverse() const { return quaternion(w, -x, -y, -z); }
+        inline vector3F xyz() const { return vector3F(FX_FROM_F(x), FX_FROM_F(y), FX_FROM_F(z)); }
+
+        quaternion operator *(const quaternion& second) const;
+        void operator *=(const quaternion& second) { *this = *this * second; }
     };
     #pragma endregion
 

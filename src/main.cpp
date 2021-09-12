@@ -57,16 +57,18 @@ void setup() {
   // Potentiometers
   pinMode(26, INPUT);
   pinMode(27, INPUT);
+
+  //mainScene.meshes[0]->objTransform.rotate(math::vector3F::up(), FX_FROM_F(45));
 }
 
 void loop() {
-  mainScene.meshes[0]->objTransform.rotateY(FX_MUL(FX_FROM_F(90), physics::deltaTimeSec));
+  mainScene.meshes[0]->objTransform.rotate((math::vector3F::up() + math::vector3F::right()).normalized(), 90 * FX_TO_F(physics::deltaTimeSec));
 
   gfx::renderScene(mainScene);
   
   physics::updateTime();
 
   // Potentiometers
-  gfx::screenOffset = math::fxLerp(-16, 16, FX_FROM_I(analogRead(26)) / 4096);
-  gfx::headsetTransform.pos.z = math::fxLerp(FX_FROM_F(-1), FX_FROM_F(1), FX_FROM_I(analogRead(27)) / 4096);
+  //gfx::screenOffset = math::fxLerp(-16, 16, FX_FROM_I(analogRead(26)) / 4096);
+  //gfx::headsetTransform.pos.z = math::fxLerp(FX_FROM_F(-1), FX_FROM_F(1), FX_FROM_I(analogRead(27)) / 4096);
 }

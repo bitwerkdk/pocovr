@@ -31,7 +31,7 @@ namespace objects {
         mesh(const unsigned int& maxTris) : tris(utils::makeVector<tri>(maxTris)) { }
         mesh(const math::vector3F& pos) : objTransform(transform(pos)) { }
         mesh(const math::vector3F& pos, const unsigned int& maxTris) : tris(utils::makeVector<tri>(maxTris)), objTransform(transform(pos)) { }
-        mesh(const math::vector3F& pos, const math::vector3F& forward, const math::vector3F& up) : objTransform(transform(pos, forward, up)) { }
-        mesh(const math::vector3F& pos, const math::vector3F& forward, const math::vector3F& up, const unsigned int& maxTris) : tris(utils::makeVector<tri>(maxTris)), objTransform(transform(pos, forward, up)) { }
+        mesh(const math::vector3F& pos, const math::quaternion& rot) : objTransform(transform(pos, rot)) { }
+        mesh(const math::vector3F& pos, const math::quaternion& rot, const unsigned int& maxTris) : tris(utils::makeVector<tri>(maxTris)), objTransform(transform(pos, rot)) { }
     };
 }

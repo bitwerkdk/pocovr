@@ -13,8 +13,8 @@
 #include "../utils/utils.h"
 #include "../vector/vector.h"
 
-#define TFT_CS1 15
-#define TFT_CS2 5
+#define TFT_CS1 15 // Right eye
+#define TFT_CS2 5 // Left eye
 
 #define MAX_TRIS 1000
 
@@ -32,7 +32,7 @@ namespace gfx {
     math::fixed screenOffset = 0;
 
     objects::transform headsetTransform;
-    math::fixed ipd = FX_FROM_F(0.063);
+    math::fixed ipd = FX_FROM_F(0.063 * 4);//FX_FROM_F(0.063);
     objects::camera leftCamera;
     objects::camera rightCamera;
 
@@ -258,8 +258,8 @@ namespace gfx {
         counter++;
 
         // Calculate camera transforms
-        leftCamera.objTransform = objects::transform(math::vector3F(-ipd >> 1, 0, 0), headsetTransform.getForward(), headsetTransform.getUp());
-        rightCamera.objTransform = objects::transform(math::vector3F(ipd >> 1, 0, 0), headsetTransform.getForward(), headsetTransform.getUp());
+        leftCamera.objTransform = objects::transform(math::vector3F(-ipd >> 1, 0, 0), headsetTransform.rot);
+        rightCamera.objTransform = objects::transform(math::vector3F(ipd >> 1, 0, 0), headsetTransform.rot);
         math::mat4x4 headsetMatrix = math::mat4x4::transformation(headsetTransform.pos, headsetTransform.getForward(), headsetTransform.getUp());
         math::vector4F leftCamPosV4 = math::vector4F(leftCamera.objTransform.pos.x, leftCamera.objTransform.pos.y, leftCamera.objTransform.pos.z, FX_FROM_I(1));
         math::vector4F rightCamPosV4 = math::vector4F(rightCamera.objTransform.pos.x, rightCamera.objTransform.pos.y, rightCamera.objTransform.pos.z,  FX_FROM_I(1));
