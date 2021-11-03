@@ -7,11 +7,11 @@
 namespace objects {
     struct light
     {
-        math::vector3F dir = math::vector3F(0, FX_FROM_F(-1), 0);
+        math::vector3FX dir = math::vector3FX(0, FX_FROM_F(-1), 0);
         math::fixed intensity = 1;
 
         light() { }
-        light(const math::vector3F& dir, const math::fixed& intensity) : dir(dir.normalized()), intensity(intensity) { }
+        light(const math::vector3FX& dir, const math::fixed& intensity) : dir(dir.normalized()), intensity(intensity) { }
     };
 
     struct scene

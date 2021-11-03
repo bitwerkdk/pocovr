@@ -10,8 +10,8 @@ objects::scene mainScene(5, 40);
 /// Fill mainScene with objects and lights
 void createScene() {
   // Make lights
-  mainScene.lights.push_back(objects::light(math::vector3F(FX_FROM_F(2), FX_FROM_F(1), FX_FROM_F(-1)), FX_FROM_F(1)));
-  mainScene.lights.push_back(objects::light(math::vector3F(FX_FROM_F(-2), FX_FROM_F(1), FX_FROM_F(-1)), FX_FROM_F(0.5)));
+  mainScene.lights.push_back(objects::light(math::vector3FX(FX_FROM_F(2), FX_FROM_F(1), FX_FROM_F(-1)), FX_FROM_F(1)));
+  mainScene.lights.push_back(objects::light(math::vector3FX(FX_FROM_F(-2), FX_FROM_F(1), FX_FROM_F(-1)), FX_FROM_F(0.5)));
 
   // Make room
   /*const math::fixed left = FX_FROM_F(-4);
@@ -20,29 +20,29 @@ void createScene() {
   const math::fixed up = FX_FROM_F(3);
   const math::fixed back = FX_FROM_F(-4);
   const math::fixed front = FX_FROM_F(4);
-  objects::mesh* room = new objects::mesh(math::vector3F(0, 0, 0));
-  room->tris.push_back(objects::tri(math::vector3F(left, down, back), math::vector3F(left, up, back), math::vector3F(left, up, front)));
-  room->tris.push_back(objects::tri(math::vector3F(left, down, back), math::vector3F(left, up, front), math::vector3F(left, down, front)));
-  room->tris.push_back(objects::tri(math::vector3F(right, down, front), math::vector3F(right, up, front), math::vector3F(right, up, back)));
-  room->tris.push_back(objects::tri(math::vector3F(right, down, front), math::vector3F(right, up, back), math::vector3F(right, down, back)));
-  room->tris.push_back(objects::tri(math::vector3F(left, down, back), math::vector3F(left, down, front), math::vector3F(right, down, front)));
-  room->tris.push_back(objects::tri(math::vector3F(left, down, back), math::vector3F(right, down, front), math::vector3F(right, down, back)));
-  room->tris.push_back(objects::tri(math::vector3F(left, up, front), math::vector3F(left, up, back), math::vector3F(right, up, back)));
-  room->tris.push_back(objects::tri(math::vector3F(left, up, front), math::vector3F(right, up, back), math::vector3F(right, up, front)));
-  room->tris.push_back(objects::tri(math::vector3F(right, down, back), math::vector3F(right, up, back), math::vector3F(left, up, back)));
-  room->tris.push_back(objects::tri(math::vector3F(right, down, back), math::vector3F(left, up, back), math::vector3F(left, down, back)));
-  room->tris.push_back(objects::tri(math::vector3F(left, down, front), math::vector3F(left, up, front), math::vector3F(right, up, front)));
-  room->tris.push_back(objects::tri(math::vector3F(left, down, front), math::vector3F(right, up, front), math::vector3F(right, down, front)));
+  objects::mesh* room = new objects::mesh(math::vector3FX(0, 0, 0));
+  room->tris.push_back(objects::tri(math::vector3FX(left, down, back), math::vector3FX(left, up, back), math::vector3FX(left, up, front)));
+  room->tris.push_back(objects::tri(math::vector3FX(left, down, back), math::vector3FX(left, up, front), math::vector3FX(left, down, front)));
+  room->tris.push_back(objects::tri(math::vector3FX(right, down, front), math::vector3FX(right, up, front), math::vector3FX(right, up, back)));
+  room->tris.push_back(objects::tri(math::vector3FX(right, down, front), math::vector3FX(right, up, back), math::vector3FX(right, down, back)));
+  room->tris.push_back(objects::tri(math::vector3FX(left, down, back), math::vector3FX(left, down, front), math::vector3FX(right, down, front)));
+  room->tris.push_back(objects::tri(math::vector3FX(left, down, back), math::vector3FX(right, down, front), math::vector3FX(right, down, back)));
+  room->tris.push_back(objects::tri(math::vector3FX(left, up, front), math::vector3FX(left, up, back), math::vector3FX(right, up, back)));
+  room->tris.push_back(objects::tri(math::vector3FX(left, up, front), math::vector3FX(right, up, back), math::vector3FX(right, up, front)));
+  room->tris.push_back(objects::tri(math::vector3FX(right, down, back), math::vector3FX(right, up, back), math::vector3FX(left, up, back)));
+  room->tris.push_back(objects::tri(math::vector3FX(right, down, back), math::vector3FX(left, up, back), math::vector3FX(left, down, back)));
+  room->tris.push_back(objects::tri(math::vector3FX(left, down, front), math::vector3FX(left, up, front), math::vector3FX(right, up, front)));
+  room->tris.push_back(objects::tri(math::vector3FX(left, down, front), math::vector3FX(right, up, front), math::vector3FX(right, down, front)));
   mainScene.meshes.push_back(room);*/
 
   // Make pyramid
-  objects::mesh* pyramid = new objects::mesh(math::vector3F(FX_FROM_F(0), FX_FROM_F(0), FX_FROM_F(3)));
-  pyramid->tris.push_back(objects::tri(math::vector3F(FX_FROM_F(-1), FX_FROM_F(-1), FX_FROM_F(-1)), math::vector3F(FX_FROM_F(1), FX_FROM_F(-1), FX_FROM_F(1)), math::vector3F(FX_FROM_F(-1), FX_FROM_F(-1), FX_FROM_F(1))));
-  pyramid->tris.push_back(objects::tri(math::vector3F(FX_FROM_F(-1), FX_FROM_F(-1), FX_FROM_F(-1)), math::vector3F(FX_FROM_F(1), FX_FROM_F(-1), FX_FROM_F(-1)), math::vector3F(FX_FROM_F(1), FX_FROM_F(-1), FX_FROM_F(1))));
-  pyramid->tris.push_back(objects::tri(math::vector3F(FX_FROM_F(1), FX_FROM_F(-1), FX_FROM_F(1)), math::vector3F(FX_FROM_F(0), FX_FROM_F(1), FX_FROM_F(0)), math::vector3F(FX_FROM_F(-1), FX_FROM_F(-1), FX_FROM_F(1))));
-  pyramid->tris.push_back(objects::tri(math::vector3F(FX_FROM_F(1), FX_FROM_F(-1), FX_FROM_F(-1)), math::vector3F(FX_FROM_F(0), FX_FROM_F(1), FX_FROM_F(0)), math::vector3F(FX_FROM_F(1), FX_FROM_F(-1), FX_FROM_F(1))));
-  pyramid->tris.push_back(objects::tri(math::vector3F(FX_FROM_F(-1), FX_FROM_F(-1), FX_FROM_F(-1)), math::vector3F(FX_FROM_F(0), FX_FROM_F(1), FX_FROM_F(0)), math::vector3F(FX_FROM_F(1), FX_FROM_F(-1), FX_FROM_F(-1))));
-  pyramid->tris.push_back(objects::tri(math::vector3F(FX_FROM_F(-1), FX_FROM_F(-1), FX_FROM_F(1)), math::vector3F(FX_FROM_F(0), FX_FROM_F(1), FX_FROM_F(0)), math::vector3F(FX_FROM_F(-1), FX_FROM_F(-1), FX_FROM_F(-1))));
+  objects::mesh* pyramid = new objects::mesh(math::vector3FX(FX_FROM_F(0), FX_FROM_F(0), FX_FROM_F(3)));
+  pyramid->tris.push_back(objects::tri(math::vector3FX(FX_FROM_F(-1), FX_FROM_F(-1), FX_FROM_F(-1)), math::vector3FX(FX_FROM_F(1), FX_FROM_F(-1), FX_FROM_F(1)), math::vector3FX(FX_FROM_F(-1), FX_FROM_F(-1), FX_FROM_F(1))));
+  pyramid->tris.push_back(objects::tri(math::vector3FX(FX_FROM_F(-1), FX_FROM_F(-1), FX_FROM_F(-1)), math::vector3FX(FX_FROM_F(1), FX_FROM_F(-1), FX_FROM_F(-1)), math::vector3FX(FX_FROM_F(1), FX_FROM_F(-1), FX_FROM_F(1))));
+  pyramid->tris.push_back(objects::tri(math::vector3FX(FX_FROM_F(1), FX_FROM_F(-1), FX_FROM_F(1)), math::vector3FX(FX_FROM_F(0), FX_FROM_F(1), FX_FROM_F(0)), math::vector3FX(FX_FROM_F(-1), FX_FROM_F(-1), FX_FROM_F(1))));
+  pyramid->tris.push_back(objects::tri(math::vector3FX(FX_FROM_F(1), FX_FROM_F(-1), FX_FROM_F(-1)), math::vector3FX(FX_FROM_F(0), FX_FROM_F(1), FX_FROM_F(0)), math::vector3FX(FX_FROM_F(1), FX_FROM_F(-1), FX_FROM_F(1))));
+  pyramid->tris.push_back(objects::tri(math::vector3FX(FX_FROM_F(-1), FX_FROM_F(-1), FX_FROM_F(-1)), math::vector3FX(FX_FROM_F(0), FX_FROM_F(1), FX_FROM_F(0)), math::vector3FX(FX_FROM_F(1), FX_FROM_F(-1), FX_FROM_F(-1))));
+  pyramid->tris.push_back(objects::tri(math::vector3FX(FX_FROM_F(-1), FX_FROM_F(-1), FX_FROM_F(1)), math::vector3FX(FX_FROM_F(0), FX_FROM_F(1), FX_FROM_F(0)), math::vector3FX(FX_FROM_F(-1), FX_FROM_F(-1), FX_FROM_F(-1))));
   mainScene.meshes.push_back(pyramid);
 }
 
@@ -58,11 +58,12 @@ void setup() {
   pinMode(26, INPUT);
   pinMode(27, INPUT);
 
-  //mainScene.meshes[0]->objTransform.rotate(math::vector3F::up(), FX_FROM_F(45));
+  mainScene.meshes[0]->objTransform.rotate(math::vector3FX::up(), 45);
 }
 
 void loop() {
-  mainScene.meshes[0]->objTransform.rotate((math::vector3F::up() + math::vector3F::right()).normalized(), 90 * FX_TO_F(physics::deltaTimeSec));
+  //mainScene.meshes[0]->objTransform.rotate((math::vector3FX::up() + math::vector3FX::right()).normalized(), 90 * FX_TO_F(physics::deltaTimeSec));
+  mainScene.meshes[0]->objTransform.rotate(math::vector3FX::right(), 90 * FX_TO_F(physics::deltaTimeSec));
 
   gfx::renderScene(mainScene);
   

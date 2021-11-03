@@ -36,19 +36,19 @@ namespace gfx {
     objects::camera leftCamera;
     objects::camera rightCamera;
 
-    int clipTriangle2D(const objects::tri& tri, const math::vector2F& point, const math::vector2F& normal, objects::tri& outTri1, objects::tri& outTri2) {
-        math::vector2F insidePoints[3];
-        math::vector2F outsidePoints[3];
+    int clipTriangle2D(const objects::tri& tri, const math::vector2FX& point, const math::vector2FX& normal, objects::tri& outTri1, objects::tri& outTri2) {
+        math::vector2FX insidePoints[3];
+        math::vector2FX outsidePoints[3];
         int numInsidePoints = 0;
         int numOutsidePoints = 0;
         
         // Calculate a second point on the clipping line
-        math::vector2F lineDir = math::vector3F::cross(normal, math::vector3F(0, 0, FX_FROM_I(1)));
-        math::vector2F secondPoint = point + lineDir;
+        math::vector2FX lineDir = math::vector3FX::cross(normal, math::vector3FX(0, 0, FX_FROM_I(1)));
+        math::vector2FX secondPoint = point + lineDir;
 
         // Check if the vertices are inside or outside points
-        for(math::vector3F vert : tri.p) {
-            if(math::vector3F::dot(vert - point, normal) >= 0) {
+        for(math::vector3FX vert : tri.p) {
+            if(math::vector3FX::dot(vert - point, normal) >= 0) {
                 insidePoints[numInsidePoints] = vert;
                 numInsidePoints++;
             }
@@ -94,17 +94,17 @@ namespace gfx {
         outTris.clear();
 
         // Make view matrix from camera transform
-        math::mat4x4 viewMat = math::mat4x4::inverseTransformation(camera.objTransform.pos, camera.objTransform.getForward(), camera.objTransform.getUp());
+        math::mat4x4FX viewMat = math::mat4x4FX::inverseTransformation(camera.objTransform.pos, camera.objTransform.getForward(), camera.objTransform.getUp());
         for (const objects::mesh* mesh : scene.meshes)
         {
             // Make transformation matrix from mesh transform
-            math::mat4x4 transformMat = math::mat4x4::transformation(mesh->objTransform.pos, mesh->objTransform.getForward(), mesh->objTransform.getUp());
+            math::mat4x4FX transformMat = math::mat4x4FX::transformation(mesh->objTransform.pos, mesh->objTransform.getForward(), mesh->objTransform.getUp());
             for (objects::tri tri : mesh->tris)
             {
-                // Convert each vertex to a vector4F
-                math::vector4F p0 = math::vector4F(tri.p[0].x, tri.p[0].y, tri.p[0].z, FX_FROM_I(1));
-                math::vector4F p1 = math::vector4F(tri.p[1].x, tri.p[1].y, tri.p[1].z, FX_FROM_I(1));
-                math::vector4F p2 = math::vector4F(tri.p[2].x, tri.p[2].y, tri.p[2].z, FX_FROM_I(1));
+                // Convert each vertex to a vector4FX
+                math::vector4FX p0 = math::vector4FX(tri.p[0].x, tri.p[0].y, tri.p[0].z, FX_FROM_I(1));
+                math::vector4FX p1 = math::vector4FX(tri.p[1].x, tri.p[1].y, tri.p[1].z, FX_FROM_I(1));
+                math::vector4FX p2 = math::vector4FX(tri.p[2].x, tri.p[2].y, tri.p[2].z, FX_FROM_I(1));
 
                 // Move vertices to their world position
                 p0 = transformMat * p0;
@@ -112,12 +112,12 @@ namespace gfx {
                 p2 = transformMat * p2;
 
                 // Backface culling
-                tri.p[0] = math::vector3F(p0.x, p0.y, p0.z);
-                tri.p[1] = math::vector3F(p1.x, p1.y, p1.z);
-                tri.p[2] = math::vector3F(p2.x, p2.y, p2.z);
-                math::vector3F dirToCamera = (camera.objTransform.pos - tri.p[0]);
-                math::vector3F normal = math::vector3F::cross(tri.p[1] - tri.p[0], tri.p[2] - tri.p[0]).normalized();
-                if(math::vector3F::dot(dirToCamera, normal) < 0) {
+                tri.p[0] = math::vector3FX(p0.x, p0.y, p0.z);
+                tri.p[1] = math::vector3FX(p1.x, p1.y, p1.z);
+                tri.p[2] = math::vector3FX(p2.x, p2.y, p2.z);
+                math::vector3FX dirToCamera = (camera.objTransform.pos - tri.p[0]);
+                math::vector3FX normal = math::vector3FX::cross(tri.p[1] - tri.p[0], tri.p[2] - tri.p[0]).normalized();
+                if(math::vector3FX::dot(dirToCamera, normal) < 0) {
                     continue;
                 }
 
@@ -125,10 +125,10 @@ namespace gfx {
                 math::fixed brightness = 0;
                 for (objects::light l : scene.lights)
                 {
-                    brightness = math::fxLerp(brightness, FX_FROM_I(1), FX_MUL(FX_ADD(math::vector3F::dot(l.dir, normal), FX_FROM_I(1)) >> 1, l.intensity));
+                    brightness = math::fxLerp(brightness, FX_FROM_I(1), FX_MUL(FX_ADD(math::vector3FX::dot(l.dir, normal), FX_FROM_I(1)) >> 1, l.intensity));
                 }
                 unsigned short color = RGB565((unsigned short)(31 * FX_TO_F(brightness)), (unsigned short)(63 * FX_TO_F(brightness)), (unsigned short)(31 * FX_TO_F(brightness)));
-
+                
                 // Move vertices into view space
                 p0 = viewMat * p0;
                 p1 = viewMat * p1;
@@ -143,7 +143,7 @@ namespace gfx {
                 p2 /= p2.w != 0 ? p2.w : 1;
 
                 // Edge clipping
-                math::vector2F edges[4] = { math::vector2F(0, FX_FROM_I(1)), math::vector2F(FX_FROM_I(1), 0), math::vector2F(0, FX_FROM_I(-1)), math::vector2F(FX_FROM_I(-1), 0) };
+                math::vector2FX edges[4] = { math::vector2FX(0, FX_FROM_I(1)), math::vector2FX(FX_FROM_I(1), 0), math::vector2FX(0, FX_FROM_I(-1)), math::vector2FX(FX_FROM_I(-1), 0) };
                 // Make finalClippedTris
                 objects::tri finalClippedTris[1 << 4];
                 int numFinalClippedTris = 0;
@@ -151,10 +151,10 @@ namespace gfx {
                 // Make tempClippedTris
                 objects::tri tempClippedTris[1 << 4];
                 int numTempClippedTris = 0;
-                for (math::vector2F edge : edges) {
+                for (math::vector2FX edge : edges) {
                     for (int i = 0; i < numFinalClippedTris; i++) {
                         objects::tri outTri1, outTri2;
-                        char numOutTris = clipTriangle2D(finalClippedTris[i], edge, math::vector2F(-edge.x, -edge.y), outTri1, outTri2);
+                        char numOutTris = clipTriangle2D(finalClippedTris[i], edge, math::vector2FX(-edge.x, -edge.y), outTri1, outTri2);
                         switch (numOutTris) {
                         case 1:
                             tempClippedTris[numTempClippedTris++] = outTri1;
@@ -258,15 +258,15 @@ namespace gfx {
         counter++;
 
         // Calculate camera transforms
-        leftCamera.objTransform = objects::transform(math::vector3F(-ipd >> 1, 0, 0), headsetTransform.rot);
-        rightCamera.objTransform = objects::transform(math::vector3F(ipd >> 1, 0, 0), headsetTransform.rot);
-        math::mat4x4 headsetMatrix = math::mat4x4::transformation(headsetTransform.pos, headsetTransform.getForward(), headsetTransform.getUp());
-        math::vector4F leftCamPosV4 = math::vector4F(leftCamera.objTransform.pos.x, leftCamera.objTransform.pos.y, leftCamera.objTransform.pos.z, FX_FROM_I(1));
-        math::vector4F rightCamPosV4 = math::vector4F(rightCamera.objTransform.pos.x, rightCamera.objTransform.pos.y, rightCamera.objTransform.pos.z,  FX_FROM_I(1));
+        leftCamera.objTransform = objects::transform(math::vector3FX(-ipd >> 1, 0, 0), headsetTransform.rot);
+        rightCamera.objTransform = objects::transform(math::vector3FX(ipd >> 1, 0, 0), headsetTransform.rot);
+        math::mat4x4FX headsetMatrix = math::mat4x4FX::transformation(headsetTransform.pos, headsetTransform.getForward(), headsetTransform.getUp());
+        math::vector4FX leftCamPosV4 = math::vector4FX(leftCamera.objTransform.pos.x, leftCamera.objTransform.pos.y, leftCamera.objTransform.pos.z, FX_FROM_I(1));
+        math::vector4FX rightCamPosV4 = math::vector4FX(rightCamera.objTransform.pos.x, rightCamera.objTransform.pos.y, rightCamera.objTransform.pos.z,  FX_FROM_I(1));
         leftCamPosV4 = headsetMatrix * leftCamPosV4;
         rightCamPosV4 = headsetMatrix * rightCamPosV4;
-        leftCamera.objTransform.pos = math::vector3F(leftCamPosV4.x, leftCamPosV4.y, leftCamPosV4.z);
-        rightCamera.objTransform.pos = math::vector3F(rightCamPosV4.x, rightCamPosV4.y, rightCamPosV4.z);
+        leftCamera.objTransform.pos = math::vector3FX(leftCamPosV4.x, leftCamPosV4.y, leftCamPosV4.z);
+        rightCamera.objTransform.pos = math::vector3FX(rightCamPosV4.x, rightCamPosV4.y, rightCamPosV4.z);
 
         // Write to display 1
         calculateTriangles(scene, screenTris, rightCamera);

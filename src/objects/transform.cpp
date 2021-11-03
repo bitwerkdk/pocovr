@@ -1,7 +1,8 @@
 #include "transform.h"
+#include "Arduino.h"
 
 namespace objects {
-    void transform::rotate(const math::vector3F& axis, const float& angle) {
+    void transform::rotate(const math::vector3FX& axis, const float& angle) {
         math::quaternion rotation(angle, axis);
         rot = rotation * rot;
     }
